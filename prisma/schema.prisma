@@ -30,12 +30,13 @@ model Doctor {
   id             String   @id @default(uuid())
   userId         String   @unique
   name           String?
+  department     String?
   specialization String?
   phone          String?
   experience     Int?
-  user           User     @relation(fields: [userId], references: [id])
-}
 
+  user      User     @relation(fields: [userId], references: [id])
+}
 
 enum Role {
   PATIENT
