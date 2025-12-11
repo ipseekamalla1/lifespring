@@ -23,6 +23,11 @@ model Patient {
   id        String   @id @default(uuid())
   userId    String   @unique
   name      String?
+  age       Int?
+  gender    String?
+  address   String?
+  phone     String?
+
   user      User     @relation(fields: [userId], references: [id])
 }
 
@@ -37,6 +42,9 @@ model Doctor {
 
   user      User     @relation(fields: [userId], references: [id])
 }
+
+
+
 
 enum Role {
   PATIENT

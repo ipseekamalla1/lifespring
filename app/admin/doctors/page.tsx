@@ -38,6 +38,42 @@ export default function DoctorsPage() {
     experience: "",
   });
 
+  const [errors, setErrors] = useState<any>({});
+
+  // ---------------------------------------------------------------
+  // VALIDATION
+  // ---------------------------------------------------------------
+  const validateForm = () => {
+    let newErrors: any = {};
+
+    if (!form.name.trim()) newErrors.name = "Name is required.";
+    if (!editDoctor && !form.email.trim())
+      newErrors.email = "Email is required.";
+
+    if (!editDoctor && form.email && !/^\S+@\S+\.\S+$/.test(form.email))
+      newErrors.email = "Invalid email format.";
+
+    if (!form.department.trim())
+      newErrors.department = "Department is required.";
+
+    if (!form.specialization.trim())
+      newErrors.specialization = "Specialization is required.";
+
+    if (!form.phone.trim()) newErrors.phone = "Phone number is required.";
+
+    if (form.phone && form.phone.length < 10)
+      newErrors.phone = "Phone must be at least 10 digits.";
+
+    if (!form.experience.trim())
+      newErrors.experience = "Experience is required.";
+
+    if (form.experience && isNaN(Number(form.experience)))
+      newErrors.experience = "Experience must be a number.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   // ---------------------------------------------------------------
   // LOAD DOCTORS
   // ---------------------------------------------------------------
@@ -64,6 +100,7 @@ export default function DoctorsPage() {
       phone: "",
       experience: "",
     });
+    setErrors({});
     setIsOpen(true);
   };
 
@@ -77,6 +114,7 @@ export default function DoctorsPage() {
       phone: doc.phone,
       experience: doc.experience,
     });
+    setErrors({});
     setIsOpen(true);
   };
 
@@ -84,10 +122,11 @@ export default function DoctorsPage() {
   // SAVE (CREATE OR UPDATE)
   // ---------------------------------------------------------------
   const handleSave = async () => {
+    if (!validateForm()) return; // stop if validation fails
+
     setLoading(true);
 
     if (editDoctor) {
-      // UPDATE
       await fetch("/api/admin/doctors", {
         method: "PUT",
         body: JSON.stringify({
@@ -96,7 +135,6 @@ export default function DoctorsPage() {
         }),
       });
     } else {
-      // CREATE
       await fetch("/api/admin/doctors", {
         method: "POST",
         body: JSON.stringify(form),
@@ -109,14 +147,13 @@ export default function DoctorsPage() {
   };
 
   // ---------------------------------------------------------------
-  // DELETE
+  // DELETE DOCTOR
   // ---------------------------------------------------------------
   const handleDelete = async (id: string) => {
     await fetch("/api/admin/doctors", {
       method: "DELETE",
       body: JSON.stringify({ id }),
     });
-
     fetchDoctors();
   };
 
@@ -186,39 +223,63 @@ export default function DoctorsPage() {
           </DialogHeader>
 
           <div className="space-y-3">
+            {/* NAME */}
             <Input
               placeholder="Name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-
-            {/* Email only required for NEW doctor */}
-            {!editDoctor && (
-              <Input
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
             )}
 
+            {/* EMAIL (only for new doctor) */}
+            {!editDoctor && (
+              <>
+                <Input
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm">{errors.email}</p>
+                )}
+              </>
+            )}
+
+            {/* DEPARTMENT */}
             <Input
               placeholder="Department"
               value={form.department}
               onChange={(e) => setForm({ ...form, department: e.target.value })}
             />
+            {errors.department && (
+              <p className="text-red-500 text-sm">{errors.department}</p>
+            )}
 
+            {/* SPECIALIZATION */}
             <Input
               placeholder="Specialization"
               value={form.specialization}
-              onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, specialization: e.target.value })
+              }
             />
+            {errors.specialization && (
+              <p className="text-red-500 text-sm">{errors.specialization}</p>
+            )}
 
+            {/* PHONE */}
             <Input
               placeholder="Phone"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
             />
+            {errors.phone && (
+              <p className="text-red-500 text-sm">{errors.phone}</p>
+            )}
 
+            {/* EXPERIENCE */}
             <Input
               placeholder="Experience (years)"
               value={form.experience}
@@ -226,6 +287,9 @@ export default function DoctorsPage() {
                 setForm({ ...form, experience: e.target.value })
               }
             />
+            {errors.experience && (
+              <p className="text-red-500 text-sm">{errors.experience}</p>
+            )}
           </div>
 
           <DialogFooter>
