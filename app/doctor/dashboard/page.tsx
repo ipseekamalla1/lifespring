@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DoctorDashboard() {
@@ -9,88 +9,69 @@ export default function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDoctor = async () => {
-      const res = await fetch("/api/doctor/me");
-      const data = await res.json();
-      setDoctor(data);
-      setLoading(false);
-    };
-
-    fetchDoctor();
+    fetch("/api/doctor/me")
+      .then((res) => res.json())
+      .then((data) => {
+        setDoctor(data);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) {
-    return <p className="p-4">Loading dashboard...</p>;
+    return <p className="text-gray-500">Loading dashboard...</p>;
   }
 
   return (
-    <div className="p-6 space-y-8">
-      <h1 className="text-3xl font-bold">
-  Hi, Dr. {doctor?.name ?? doctor?.email?.split("@")[0]} 👋
-</h1>
+    <div className="space-y-8">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold">
+          Hi, Dr. {doctor?.name ?? "Doctor"} 👋
+        </h1>
+        <p className="text-gray-600 mt-1">
+          Here’s what’s happening today
+        </p>
+      </div>
 
-
-      {/* TOP CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-bold">Total Patients</h2>
-            <p className="text-4xl font-semibold mt-2">{doctor?.patientCount || 0}</p>
+          <CardHeader>
+            <CardTitle>Total Patients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-semibold">0</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-bold">Today's Appointments</h2>
-            <p className="text-4xl font-semibold mt-2">{doctor?.todayAppointments || 0}</p>
+          <CardHeader>
+            <CardTitle>Today’s Appointments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-semibold">0</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-bold">Pending Reports</h2>
-            <p className="text-4xl font-semibold mt-2">3</p>
+          <CardHeader>
+            <CardTitle>Pending Reports</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-semibold">0</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* UPCOMING APPOINTMENTS */}
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-bold mb-4">Upcoming Appointments</h2>
-
-          {doctor?.appointments?.length === 0 ? (
-            <p>No upcoming appointments</p>
-          ) : (
-            <div className="space-y-3">
-              {doctor?.appointments?.map((appt: any) => (
-                <div
-                  key={appt.id}
-                  className="border p-3 rounded-lg flex justify-between"
-                >
-                  <div>
-                    <p className="font-semibold">{appt.patientName}</p>
-                    <p className="text-sm text-gray-600">{appt.time}</p>
-                  </div>
-                  <Button size="sm">View</Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* QUICK ACTIONS */}
       <Card>
-        <CardContent className="p-6">
-          <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
-
-          <div className="flex flex-wrap gap-3">
-            <Button>Add Patient Notes</Button>
-            <Button>View My Patients</Button>
-            <Button>Medical Reports</Button>
-            <Button variant="outline">Profile Settings</Button>
-          </div>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-4">
+          <Button>View Patients</Button>
+          <Button>Appointments</Button>
+          <Button variant="outline">Edit Profile</Button>
         </CardContent>
       </Card>
     </div>
