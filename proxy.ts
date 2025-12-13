@@ -4,8 +4,14 @@ import jwt from "jsonwebtoken";
 
 export function proxy(req: NextRequest) {
   const token = req.cookies.get("session")?.value;
+  const { pathname } = req.nextUrl;
 
-  if (req.nextUrl.pathname.startsWith("/admin")) {
+  // Protected routes
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isDoctorRoute = pathname.startsWith("/doctor");
+  const isPatientRoute = pathname.startsWith("/patient");
+
+  if (isAdminRoute || isDoctorRoute || isPatientRoute) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -13,10 +19,18 @@ export function proxy(req: NextRequest) {
     try {
       const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
-      if (decoded.role !== "ADMIN") {
+      if (isAdminRoute && decoded.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
-    } catch (error) {
+
+      if (isDoctorRoute && decoded.role !== "DOCTOR") {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
+      }
+
+      if (isPatientRoute && decoded.role !== "PATIENT") {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
+      }
+    } catch {
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }
@@ -25,5 +39,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/doctor/:path*", "/patient/:path*"],
 };
