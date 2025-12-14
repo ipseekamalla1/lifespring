@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 /* =========================
    GET Doctor Profile
@@ -28,9 +29,7 @@ export async function GET() {
   const doctor = await prisma.doctor.findUnique({
     where: { userId: decoded.id },
     include: {
-      user: {
-        select: { email: true },
-      },
+      user: { select: { email: true } },
     },
   });
 
@@ -60,12 +59,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let decoded: any;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!);
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-  }
+  const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
   if (decoded.role !== "DOCTOR") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -80,9 +74,54 @@ export async function PUT(req: Request) {
       department: body.department,
       specialization: body.specialization,
       phone: body.phone,
-      experience: body.experience,
     },
   });
 
   return NextResponse.json({ success: true, doctor: updatedDoctor });
+}
+
+/* =========================
+   CHANGE PASSWORD
+========================= */
+export async function PATCH(req: Request) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session")?.value;
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+
+  if (decoded.role !== "DOCTOR") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { currentPassword, newPassword } = await req.json();
+
+  if (!currentPassword || !newPassword) {
+    return NextResponse.json({ error: "All fields required" }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.id },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  const isValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isValid) {
+    return NextResponse.json({ error: "Current password incorrect" }, { status: 400 });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: decoded.id },
+    data: { password: hashedPassword },
+  });
+
+  return NextResponse.json({ success: true });
 }
