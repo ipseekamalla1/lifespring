@@ -1,23 +1,79 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import BookAppointment from "./BookAppointment";
 
-export default function PatientAppointments() {
+interface Appointment {
+  id: string;
+  date: string;
+  reason: string;
+  status: string;
+  doctor: {
+    name: string;
+    specialization: string;
+  };
+}
+
+export default function PatientAppointmentsPage() {
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAppointments = async () => {
+    setLoading(true);
+    const res = await fetch("/api/patient/appointments");
+   const data = await res.json();
+
+if (Array.isArray(data)) {
+  setAppointments(data);
+} else {
+  setAppointments([]);
+}
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const cancelAppointment = async (id: string) => {
+    await fetch(`/api/patient/appointments/${id}`, {
+      method: "PATCH",
+      credentials: "include",
+    });
+    fetchAppointments();
+  };
+
   return (
-    <div className="p-6 max-w-4xl">
-      <h1 className="text-xl font-semibold mb-4">Appointments</h1>
+    <div>
+      <h1 className="text-2xl font-bold mb-4">My Appointments</h1>
 
-      <Card>
-        <CardContent className="p-6 space-y-2">
-          <p className="text-sm text-muted-foreground">
-            You don’t have any appointments yet.
-          </p>
+      {loading && <p>Loading...</p>}
 
-          <p className="text-xs text-muted-foreground">
-            Appointment booking will be available soon.
-          </p>
-        </CardContent>
-      </Card>
+      {!loading && appointments.length === 0 && (
+        <p>No appointments found</p>
+      )}
+
+      {appointments.map((a) => (
+        <div key={a.id} className="border p-4 mb-3 rounded">
+          <p><b>Doctor:</b> {a.doctor.name}</p>
+          <p><b>Specialization:</b> {a.doctor.specialization}</p>
+          <p><b>Date:</b> {new Date(a.date).toLocaleString()}</p>
+          <p><b>Reason:</b> {a.reason}</p>
+          <p><b>Status:</b> {a.status}</p>
+
+          {a.status !== "CANCELLED" && (
+            <button
+              className="mt-2 bg-red-500 text-white px-3 py-1 rounded"
+              onClick={() => cancelAppointment(a.id)}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      ))}
+
+      <BookAppointment onBooked={fetchAppointments} />
     </div>
   );
 }

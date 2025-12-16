@@ -29,6 +29,8 @@ model Patient {
   phone     String?
 
   user      User     @relation(fields: [userId], references: [id])
+    appointments Appointment[]
+
 }
 
 model Doctor {
@@ -41,9 +43,31 @@ model Doctor {
   experience     Int?
 
   user      User     @relation(fields: [userId], references: [id])
+    appointments Appointment[]
+
 }
 
 
+model Appointment {
+  id        String   @id @default(uuid())
+  patientId String
+  doctorId  String
+
+  date      DateTime
+  reason    String
+  status    AppointmentStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  patient   Patient @relation(fields: [patientId], references: [id])
+  doctor    Doctor  @relation(fields: [doctorId], references: [id])
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
 
 
 enum Role {
