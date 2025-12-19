@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function DoctorDetails() {
   const { id } = useParams();
+  const router = useRouter();
   const [doctor, setDoctor] = useState<any>(null);
 
   useEffect(() => {
@@ -30,9 +32,15 @@ export default function DoctorDetails() {
           </p>
           <p className="text-sm">Phone: {doctor.phone}</p>
 
-          <p className="text-xs text-muted-foreground pt-2">
-            Appointment booking will be available soon.
-          </p>
+          {/* ✅ NEW BUTTON */}
+          <Button
+            className="mt-4"
+            onClick={() =>
+              router.push(`/patient/appointments/new?doctorId=${doctor.id}`)
+            }
+          >
+            Book Appointment
+          </Button>
         </CardContent>
       </Card>
     </div>
