@@ -86,7 +86,7 @@ export async function PUT(req: Request) {
 export async function PATCH(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
-,,,,,,,,,,,,,,,,,
+
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

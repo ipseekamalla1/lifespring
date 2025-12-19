@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
+
 
 const menuItems = [
   {
@@ -35,8 +37,16 @@ const menuItems = [
   },
 ];
 
+
+
 export default function PatientSidebar() {
+  const router = useRouter();
   const pathname = usePathname();
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  };
 
   return (
     <aside className="w-64 border-r bg-muted/40 px-6 py-8">
@@ -65,8 +75,12 @@ export default function PatientSidebar() {
       </nav>
 
       <div className="mt-10">
-        <Button variant="destructive" className="w-full gap-2">
-          <LogOut className="h-4 w-4" />
+        <Button
+          variant="destructive"
+          className="w-full flex gap-2"
+          onClick={logout}
+        >
+          <LogOut size={18} />
           Logout
         </Button>
       </div>

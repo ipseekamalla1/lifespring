@@ -16,16 +16,30 @@ type Patient = {
 export default function PatientDashboard() {
   const router = useRouter();
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [appointmentsCount, setAppointmentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadDashboard = async () => {
       try {
-        const res = await fetch("/api/patient/profile");
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        setPatient(data);
+        const profileRes = await fetch("/api/patient/profile", {
+          credentials: "include",
+        });
+
+        if (!profileRes.ok) throw new Error();
+        const profileData = await profileRes.json();
+        setPatient(profileData);
+
+        const appointmentsRes = await fetch(
+          "/api/patient/appointments",
+          { credentials: "include" }
+        );
+
+        const appointmentsData = await appointmentsRes.json();
+        if (Array.isArray(appointmentsData)) {
+          setAppointmentsCount(appointmentsData.length);
+        }
       } catch {
         setError("Unable to load dashboard.");
       } finally {
@@ -33,7 +47,7 @@ export default function PatientDashboard() {
       }
     };
 
-    loadProfile();
+    loadDashboard();
   }, []);
 
   if (loading) return <p className="p-6">Loading dashboard...</p>;
@@ -47,29 +61,28 @@ export default function PatientDashboard() {
     patient?.address;
 
   return (
-    <div className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
-        {/* Welcome Card */}
-        <Card>
-          <CardContent className="p-6 space-y-2">
-            <h2 className="text-xl font-semibold">
-              Welcome{patient?.name ? `, ${patient.name}` : ""}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Manage your profile and explore available doctors.
-            </p>
-          </CardContent>
-        </Card>
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold">
+          Welcome{patient?.name ? `, ${patient.name}` : ""}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your health records and appointments
+        </p>
+      </div>
 
-        {/* Profile Status Card */}
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Profile Status */}
         <Card>
           <CardContent className="p-6 space-y-3">
-            <h3 className="font-medium">Profile Status</h3>
+            <h3 className="font-medium text-lg">Profile</h3>
 
             {!isProfileComplete ? (
               <>
-                <p className="text-yellow-600 text-sm">
-                  Your profile is incomplete.
+                <p className="text-sm text-yellow-600">
+                  Profile incomplete
                 </p>
                 <Button
                   size="sm"
@@ -80,8 +93,8 @@ export default function PatientDashboard() {
               </>
             ) : (
               <>
-                <p className="text-green-600 text-sm">
-                  Your profile is complete.
+                <p className="text-sm text-green-600">
+                  Profile completed
                 </p>
                 <Button
                   size="sm"
@@ -95,12 +108,12 @@ export default function PatientDashboard() {
           </CardContent>
         </Card>
 
-        {/* Doctors Card */}
+        {/* Doctors */}
         <Card>
           <CardContent className="p-6 space-y-3">
-            <h3 className="font-medium">Doctors</h3>
+            <h3 className="font-medium text-lg">Doctors</h3>
             <p className="text-sm text-muted-foreground">
-              Browse doctors by specialization and experience.
+              Browse doctors and specializations
             </p>
             <Button
               size="sm"
@@ -111,16 +124,33 @@ export default function PatientDashboard() {
           </CardContent>
         </Card>
 
-        {/* Appointments Card (Empty State) */}
+        {/* Appointments */}
         <Card>
           <CardContent className="p-6 space-y-3">
-            <h3 className="font-medium">Appointments</h3>
+            <h3 className="font-medium text-lg">Appointments</h3>
+
             <p className="text-sm text-muted-foreground">
-              You have no appointments yet.
+              {appointmentsCount === 0
+                ? "No appointments booked"
+                : `You have ${appointmentsCount} appointment(s)`}
             </p>
-            <Button size="sm" variant="outline" disabled>
-              Booking coming soon
-            </Button>
+
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => router.push("/patient/appointments")}
+              >
+                View Appointments
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => router.push("/patient/doctors")}
+              >
+                Book New
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
