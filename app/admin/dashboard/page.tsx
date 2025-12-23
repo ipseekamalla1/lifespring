@@ -1,80 +1,116 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users,
+  UserRound,
+  CalendarCheck,
+  Clock
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const res = await fetch("/api/admin/dashboard");
+      const text = await res.text();
+      if (!text) return;
+      setStats(JSON.parse(text));
+    };
+    fetchStats();
+  }, []);
+
   const cards = [
-    { title: "Total Doctors", value: 12 },
-    { title: "Total Patients", value: 94 },
-    { title: "Departments", value: 6 },
+    {
+      title: "Doctors",
+      value: stats?.totalDoctors,
+      icon: UserRound,
+      gradient: "from-emerald-500 to-green-600",
+    },
+    {
+      title: "Patients",
+      value: stats?.totalPatients,
+      icon: Users,
+      gradient: "from-green-500 to-emerald-600",
+    },
+    {
+      title: "Appointments",
+      value: stats?.totalAppointments,
+      icon: CalendarCheck,
+      gradient: "from-teal-500 to-emerald-600",
+    },
+    {
+      title: "Pending",
+      value: stats?.pendingAppointments,
+      icon: Clock,
+      gradient: "from-lime-500 to-green-600",
+    },
   ];
 
   return (
-    <div className="space-y-10 p-4">
-      {/* Title */}
-      <motion.h1
-        className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent"
-        initial={{ opacity: 0, y: -20 }}
+    <div className="space-y-10 p-6 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
+      
+      {/* HEADER */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        Welcome, Admin
-      </motion.h1>
+        <h1 className="text-4xl font-bold text-emerald-800">
+          Admin Dashboard
+        </h1>
+        <p className="text-emerald-700/70 mt-1">
+          Healthcare system overview
+        </p>
+      </motion.div>
 
-      {/* Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {cards.map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.12 }}
-          >
-            <Card
-              className="
-                bg-white/10 backdrop-blur-lg 
-                border border-white/20 
-                shadow-xl rounded-2xl 
-                hover:shadow-2xl 
-                transition-all 
-                hover:scale-[1.03] 
-                hover:border-blue-400/40 
-                cursor-pointer
-              "
+      {/* STAT CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {cards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
             >
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                  {item.title}
-                </CardTitle>
-              </CardHeader>
+              <Card className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-md hover:shadow-xl transition-all">
+                <div
+                  className={`absolute inset-0 bg-gradient-to-r ${card.gradient} opacity-[0.08]`}
+                />
 
-              <CardContent>
-                <motion.p
-                  className="text-5xl font-extrabold text-gray-900 dark:text-white tracking-tight"
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 150 }}
-                >
-                  {item.value}
-                </motion.p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+                <CardContent className="p-6 flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-emerald-700/70">
+                      {card.title}
+                    </p>
+                    <h2 className="text-4xl font-bold text-emerald-900">
+                      {card.value ?? "—"}
+                    </h2>
+                  </div>
+
+                  <div
+                    className={`p-4 rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg`}
+                  >
+                    <Icon size={28} />
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Bottom Section - Can add charts later */}
+      {/* INSIGHTS */}
       <motion.div
-        className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-md dark:from-gray-800 dark:to-gray-700"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-md"
       >
-        <h2 className="text-xl font-semibold mb-2">
-          Analytics Overview
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300">
-          Add charts, graphs, or insights here later for a more complete dashboard.
-        </p>
+       
       </motion.div>
     </div>
   );
