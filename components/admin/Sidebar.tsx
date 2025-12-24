@@ -2,44 +2,70 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Home, Users, LogOut, Stethoscope } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  Home,
+  Users,
+  LogOut,
+  Stethoscope,
+  CalendarCheck,
+  BarChart3,
+} from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
-    await fetch("/api/logout", {
-      method: "POST",
-    });
+    await fetch("/api/logout", { method: "POST" });
+    router.push("/login");
+  };
 
-    router.push("/login"); // redirect after logout
+  const navItem = (href: string, label: string, Icon: any) => {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition
+          ${
+            active
+              ? "bg-emerald-100 text-emerald-800 font-semibold"
+              : "text-emerald-700 hover:bg-emerald-50"
+          }`}
+      >
+        <Icon size={18} />
+        {label}
+      </Link>
+    );
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg p-6 flex flex-col justify-between">
-      <div>
-        <h1 className="text-2xl font-bold mb-8 text-center">Admin Panel</h1>
+    <aside className="w-64 min-h-screen bg-white border-r border-emerald-100 shadow-sm flex flex-col justify-between">
+      {/* TOP */}
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-emerald-800 text-center mb-8">
+          Admin Panel
+        </h1>
 
-        <nav className="space-y-4">
-          <Link href="/admin/dashboard" className="flex items-center gap-2 text-gray-700 hover:text-black">
-            <Home size={18} /> Dashboard
-          </Link>
-
-          <Link href="/admin/doctors" className="flex items-center gap-2 text-gray-700 hover:text-black">
-            <Stethoscope size={18} /> Doctors
-          </Link>
-
-          <Link href="/admin/patients" className="flex items-center gap-2 text-gray-700 hover:text-black">
-            <Users size={18} /> Patients
-          </Link>
+        <nav className="space-y-2">
+          {navItem("/admin/dashboard", "Dashboard", Home)}
+          {navItem("/admin/appointments", "Appointments", CalendarCheck)}
+          {navItem("/admin/doctors", "Doctors", Stethoscope)}
+          {navItem("/admin/patients", "Patients", Users)}
+          {navItem("/admin/reports", "Reports", BarChart3)}
         </nav>
       </div>
 
-      <Button variant="destructive" className="mt-6" onClick={handleLogout}>
-        <LogOut size={18} />
-        Logout
-      </Button>
-    </div>
+      {/* LOGOUT */}
+      <div className="p-6">
+        <Button
+          onClick={handleLogout}
+          className="w-full bg-red-500 hover:bg-red-600 text-white flex items-center gap-2"
+        >
+          <LogOut size={18} />
+          Logout
+        </Button>
+      </div>
+    </aside>
   );
 }

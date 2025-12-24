@@ -20,23 +20,29 @@ export async function GET() {
 
     // 📊 Counts
     const [
-      totalDoctors,
-      totalPatients,
-      totalAppointments,
-      pendingAppointments,
-    ] = await Promise.all([
-      prisma.user.count({ where: { role: "DOCTOR" } }),
-      prisma.user.count({ where: { role: "PATIENT" } }),
-      prisma.appointment.count(),
-      prisma.appointment.count({ where: { status: "PENDING" } }),
-    ]);
+    totalDoctors,
+    totalPatients,
+    totalAppointments,
+    pendingAppointments,
+    confirmedAppointments,
+    cancelledAppointments,
+  ] = await Promise.all([
+    prisma.doctor.count(),
+    prisma.patient.count(),
+    prisma.appointment.count(),
+    prisma.appointment.count({ where: { status: "PENDING" } }),
+    prisma.appointment.count({ where: { status: "CONFIRMED" } }),
+    prisma.appointment.count({ where: { status: "CANCELLED" } }),
+  ]);
 
     return NextResponse.json({
-      totalDoctors,
-      totalPatients,
-      totalAppointments,
-      pendingAppointments,
-    });
+    totalDoctors,
+    totalPatients,
+    totalAppointments,
+    pendingAppointments,
+    confirmedAppointments,
+    cancelledAppointments,
+  });
   } catch (error) {
     return NextResponse.json(
       { error: "Something went wrong" },
