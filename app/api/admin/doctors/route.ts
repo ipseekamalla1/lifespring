@@ -2,19 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-// Helper: Email validator
+// ----------------------------------
+// HELPERS
+// ----------------------------------
 function isValidEmail(email: string) {
   return /\S+@\S+\.\S+/.test(email);
 }
 
-// Helper: Phone validator
 function isValidPhone(phone: string) {
   return /^[0-9]{7,15}$/.test(phone);
 }
 
-// ---------------------------------------------------
+// ----------------------------------
 // GET ALL DOCTORS
-// ---------------------------------------------------
+// ----------------------------------
 export async function GET() {
   const doctors = await prisma.doctor.findMany({
     include: {
@@ -30,26 +31,32 @@ export async function GET() {
   const formattedDoctors = doctors.map((doc) => ({
     id: doc.id,
     name: doc.name,
-    specialty: doc.specialization,
+    department: doc.department,
+    specialization: doc.specialization,
     experience: doc.experience,
     email: doc.user.email,
     phone: doc.phone,
+
+    // ✅ correct patient count
     patientsCount: new Set(
       doc.appointments.map((a) => a.patientId)
     ).size,
-    status: doc.appointments.length > 0 ? "Active" : "Inactive",
+
+    // ✅ status comes from DB
+    status: doc.status,
   }));
 
   return NextResponse.json(formattedDoctors);
 }
-// ---------------------------------------------------
+
+// ----------------------------------
 // CREATE DOCTOR
-// ---------------------------------------------------
+// ----------------------------------
 export async function POST(req: Request) {
   const body = await req.json();
   const { name, email, department, specialization, phone, experience } = body;
 
-  // --- VALIDATION ---
+  // VALIDATION
   if (!name || !email || !department || !specialization || !phone) {
     return NextResponse.json(
       { error: "All fields are required" },
@@ -78,8 +85,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Check duplicate email
-  const existingUser = await prisma.user.findUnique({ where: { email } });
+  // DUPLICATE EMAIL CHECK
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
   if (existingUser) {
     return NextResponse.json(
       { error: "A user with this email already exists" },
@@ -104,27 +114,32 @@ export async function POST(req: Request) {
           specialization,
           phone,
           experience: Number(experience),
+
+          // ✅ DEFAULT ACTIVE
+          status: "ACTIVE",
         },
       },
+    },
+    include: {
+      doctor: true,
     },
   });
 
   return NextResponse.json({
     message: "Doctor created successfully",
     tempPassword,
-    user,
+    doctor: user.doctor,
   });
 }
 
-// ---------------------------------------------------
+// ----------------------------------
 // UPDATE DOCTOR
-// ---------------------------------------------------
+// ----------------------------------
 export async function PUT(req: Request) {
   const body = await req.json();
   const { id, name, department, specialization, phone, experience } = body;
 
-  // VALIDATIONS
-  if (!name || !department || !specialization || !phone) {
+  if (!id || !name || !department || !specialization || !phone) {
     return NextResponse.json(
       { error: "All fields except email are required" },
       { status: 400 }
@@ -156,20 +171,61 @@ export async function PUT(req: Request) {
     },
   });
 
-  return NextResponse.json({ message: "Doctor updated", doctor });
+  return NextResponse.json({
+    message: "Doctor updated successfully",
+    doctor,
+  });
 }
 
-// ---------------------------------------------------
+// ----------------------------------
 // DELETE DOCTOR
-// ---------------------------------------------------
+// ----------------------------------
 export async function DELETE(req: Request) {
   const { id } = await req.json();
 
-  const doctor = await prisma.doctor.delete({ where: { id } });
+  if (!id) {
+    return NextResponse.json(
+      { error: "Doctor ID is required" },
+      { status: 400 }
+    );
+  }
+
+  const doctor = await prisma.doctor.delete({
+    where: { id },
+  });
 
   await prisma.user.delete({
     where: { id: doctor.userId },
   });
 
-  return NextResponse.json({ message: "Doctor deleted" });
+  return NextResponse.json({
+    message: "Doctor deleted successfully",
+  });
+}
+
+
+// ---------------------------------------------------
+// TOGGLE DOCTOR STATUS
+// ---------------------------------------------------
+export async function PATCH(req: Request) {
+  const { id, status } = await req.json();
+
+  if (!id || !status) {
+    return NextResponse.json(
+      { error: "Doctor id and status required" },
+      { status: 400 }
+    );
+  }
+
+  const doctor = await prisma.doctor.update({
+    where: { id },
+    data: {
+      status,
+    },
+  });
+
+  return NextResponse.json({
+    message: "Status updated",
+    doctor,
+  });
 }
