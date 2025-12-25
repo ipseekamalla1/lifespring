@@ -17,28 +17,30 @@ export default function DoctorDetailsPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [doctor, setDoctor] = useState<any>(null);
-  const [activeTab, setActiveTab] =
-    useState<"appointments" | "patients">("appointments");
+  // WORK HOURS & SLOT LENGTH
+  const WORK_START = 9;
+  const WORK_END = 17;
+  const SLOT_MINUTES = 30;
 
-  /* ---------------- MODAL STATE ---------------- */
+  /* ---------------- STATES ---------------- */
+  const [doctor, setDoctor] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"appointments" | "patients">(
+    "appointments"
+  );
+
   const [open, setOpen] = useState(false);
 
-  /* ---------------- NEW APPOINTMENT FORM ---------------- */
   const [allPatients, setAllPatients] = useState<any[]>([]);
   const [patientId, setPatientId] = useState("");
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
 
   /* ---------------- LOAD DOCTOR ---------------- */
   useEffect(() => {
     if (!id) return;
-
     fetch(`/api/admin/doctors/${id}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch doctor");
-        return res.json();
-      })
+      .then((res) => res.json())
       .then(setDoctor)
       .catch(console.error);
   }, [id]);
@@ -46,7 +48,6 @@ export default function DoctorDetailsPage() {
   /* ---------------- LOAD PATIENTS WHEN MODAL OPENS ---------------- */
   useEffect(() => {
     if (!open) return;
-
     fetch("/api/admin/patients")
       .then((res) => res.json())
       .then(setAllPatients)
@@ -56,58 +57,72 @@ export default function DoctorDetailsPage() {
   /* ---------------- UNIQUE PATIENTS ---------------- */
   const uniquePatients = useMemo(() => {
     if (!doctor?.appointments) return [];
-
     const map = new Map();
     doctor.appointments.forEach((a: any) => {
       if (a.patient && !map.has(a.patient.id)) {
         map.set(a.patient.id, a.patient);
       }
     });
-
     return Array.from(map.values());
   }, [doctor]);
 
-  if (!doctor) {
-    return <p className="p-6 text-emerald-700">Loading doctor...</p>;
-  }
+  /* ---------------- AVAILABLE SLOTS ---------------- */
+  const availableSlots = useMemo(() => {
+    if (!date || !doctor?.appointments) return [];
 
- const createAppointment = async () => {
-  if (!patientId || !date || !reason) {
-    alert("Please fill all fields");
-    return;
-  }
+    const booked = doctor.appointments
+      .filter((a: any) => a.date.split("T")[0] === date)
+      .map((a: any) => new Date(a.date).toTimeString().slice(0, 5));
 
-  const res = await fetch("/api/admin/appointments", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      doctorId: id,
-      patientId,
-      date,
-      reason,
-    }),
-  });
+    const allSlots: string[] = [];
+    for (let hour = WORK_START; hour < WORK_END; hour++) {
+      for (let min = 0; min < 60; min += SLOT_MINUTES) {
+        const h = hour.toString().padStart(2, "0");
+        const m = min.toString().padStart(2, "0");
+        allSlots.push(`${h}:${m}`);
+      }
+    }
 
-  if (!res.ok) {
-    alert("Failed to create appointment");
-    return;
-  }
+    return allSlots.filter((s) => !booked.includes(s));
+  }, [date, doctor]);
 
-  // reset form
-  setPatientId("");
-  setDate("");
-  setReason("");
-  setOpen(false);
+  /* ---------------- CREATE APPOINTMENT ---------------- */
+  const createAppointment = async () => {
+    if (!patientId || !date || !time || !reason) {
+      alert("Please fill all fields");
+      return;
+    }
 
-  // 🔥 refresh_toggle
-  fetch(`/api/admin/doctors/${id}`)
-    .then((res) => res.json())
-    .then(setDoctor);
-};
+    const res = await fetch("/api/admin/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        doctorId: id,
+        patientId,
+        date: date + "T" + time + ":00",
+        reason,
+      }),
+    });
 
+    if (!res.ok) {
+      alert("Failed to create appointment");
+      return;
+    }
 
+    // Reset
+    setPatientId("");
+    setDate("");
+    setTime("");
+    setReason("");
+    setOpen(false);
+
+    // Refresh doctor appointments
+    fetch(`/api/admin/doctors/${id}`)
+      .then((res) => res.json())
+      .then(setDoctor);
+  };
+
+  if (!doctor) return <p className="p-6 text-emerald-700">Loading doctor...</p>;
 
   return (
     <div className="p-6 space-y-8 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
@@ -121,7 +136,6 @@ export default function DoctorDetailsPage() {
         <div className="p-5 bg-emerald-600 text-white rounded-xl">
           <UserRound size={32} />
         </div>
-
         <div className="flex-1">
           <h1 className="text-2xl font-semibold text-emerald-800">
             Dr. {doctor.name}
@@ -129,15 +143,12 @@ export default function DoctorDetailsPage() {
           <p className="text-emerald-700">
             {doctor.specialization} — {doctor.department}
           </p>
-
           <div className="mt-3 flex gap-6 text-sm text-emerald-700">
             <span className="flex items-center gap-1">
-              <Stethoscope size={16} />
-              {doctor.experience} yrs
+              <Stethoscope size={16} /> {doctor.experience} yrs
             </span>
             <span className="flex items-center gap-1">
-              <Phone size={16} />
-              {doctor.phone}
+              <Phone size={16} /> {doctor.phone}
             </span>
           </div>
         </div>
@@ -158,8 +169,7 @@ export default function DoctorDetailsPage() {
                 : "border-transparent text-emerald-600"
             }`}
           >
-            <Icon size={16} />
-            {label}
+            <Icon size={16} /> {label}
           </button>
         ))}
       </div>
@@ -169,16 +179,12 @@ export default function DoctorDetailsPage() {
         <div className="bg-white rounded-2xl border shadow">
 
           <div className="flex justify-between p-4 border-b">
-            <h2 className="font-semibold text-emerald-800">
-              Doctor Appointments
-            </h2>
-
+            <h2 className="font-semibold text-emerald-800">Doctor Appointments</h2>
             <button
               onClick={() => setOpen(true)}
               className="flex gap-2 items-center bg-emerald-600 text-white px-4 py-2 rounded-xl"
             >
-              <Plus size={16} />
-              New Appointment
+              <Plus size={16} /> New Appointment
             </button>
           </div>
 
@@ -191,16 +197,32 @@ export default function DoctorDetailsPage() {
                 <th className="p-4">Status</th>
               </tr>
             </thead>
-
             <tbody>
+              {doctor.appointments.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="p-6 text-center text-emerald-600">
+                    No appointments scheduled
+                  </td>
+                </tr>
+              )}
               {doctor.appointments.map((a: any) => (
                 <tr key={a.id} className="border-t">
                   <td className="p-4">{a.patient?.name}</td>
-                  <td className="p-4">
-                    {new Date(a.date).toLocaleDateString()}
-                  </td>
+                  <td className="p-4">{new Date(a.date).toLocaleString()}</td>
                   <td className="p-4">{a.reason}</td>
-                  <td className="p-4">{a.status}</td>
+                  <td className="p-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        a.status === "CONFIRMED"
+                          ? "bg-green-100 text-green-700"
+                          : a.status === "CANCELLED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {a.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -220,7 +242,6 @@ export default function DoctorDetailsPage() {
                 <th className="p-4">Phone</th>
               </tr>
             </thead>
-
             <tbody>
               {uniquePatients.map((p: any) => (
                 <tr key={p.id} className="border-t">
@@ -272,6 +293,35 @@ export default function DoctorDetailsPage() {
                 className="w-full border rounded-lg p-2"
               />
 
+              {date && (
+                <div>
+                  <label className="block text-sm font-medium text-emerald-700 mb-2">
+                    Select Time Slot
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {availableSlots.length === 0 && (
+                      <p className="text-sm text-red-500 col-span-4">
+                        No slots available for this date
+                      </p>
+                    )}
+                    {availableSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setTime(slot)}
+                        className={`py-1 rounded-xl text-sm font-medium border ${
+                          time === slot
+                            ? "bg-emerald-600 text-white"
+                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <input
                 type="text"
                 placeholder="Reason for Visit"
@@ -279,28 +329,22 @@ export default function DoctorDetailsPage() {
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full border rounded-lg p-2"
               />
-            {/* Buttons */}
-      <div className="flex justify-end gap-3 pt-2">
-        <button
-          onClick={() => setOpen(false)}
-          className="px-4 py-2 rounded-xl border"
-        >
-          Cancel
-        </button>
 
-        <button
-          onClick={createAppointment}
-          className="px-4 py-2 rounded-xl
-            bg-gradient-to-r from-emerald-500 to-green-600
-            text-white font-medium"
-        >
-          Create
-        </button>
-      </div>
-
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-2 rounded-xl border"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createAppointment}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium"
+                >
+                  Create
+                </button>
+              </div>
             </div>
-        
-
           </div>
         </div>
       )}
