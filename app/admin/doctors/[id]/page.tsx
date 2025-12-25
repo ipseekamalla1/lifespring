@@ -36,6 +36,10 @@ export default function DoctorDetailsPage() {
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [genderFilter, setGenderFilter] = useState("");
+  const [ageFilter, setAgeFilter] = useState("");
+
   /* ---------------- LOAD DOCTOR ---------------- */
   useEffect(() => {
     if (!id) return;
@@ -66,6 +70,37 @@ export default function DoctorDetailsPage() {
     return Array.from(map.values());
   }, [doctor]);
 
+  /* ---------------- FILTERED PATIENTS ---------------- */
+  const filteredPatients = useMemo(() => {
+  return uniquePatients.filter((p) => {
+    const name = p.name?.toLowerCase() || "";
+    const phone = p.phone || "";
+    const gender = p.gender || "";
+    const age = p.age ?? null;
+
+    const matchesSearch =
+      name.includes(searchQuery.toLowerCase()) ||
+      phone.includes(searchQuery);
+
+    const matchesGender = genderFilter
+      ? gender === genderFilter
+      : true;
+
+    const matchesAge = ageFilter
+      ? age !== null &&
+        (ageFilter === "0-18"
+          ? age <= 18
+          : ageFilter === "19-35"
+          ? age >= 19 && age <= 35
+          : ageFilter === "36-60"
+          ? age >= 36 && age <= 60
+          : age >= 61)
+      : true;
+
+    return matchesSearch && matchesGender && matchesAge;
+  });
+}, [uniquePatients, searchQuery, genderFilter, ageFilter]);
+
   /* ---------------- AVAILABLE SLOTS ---------------- */
   const availableSlots = useMemo(() => {
     if (!date || !doctor?.appointments) return [];
@@ -83,7 +118,7 @@ export default function DoctorDetailsPage() {
       }
     }
 
-    return allSlots.filter((s) => !booked.includes(s));
+    return allSlots;
   }, [date, doctor]);
 
   /* ---------------- CREATE APPOINTMENT ---------------- */
@@ -109,7 +144,6 @@ export default function DoctorDetailsPage() {
       return;
     }
 
-    // Reset
     setPatientId("");
     setDate("");
     setTime("");
@@ -232,155 +266,195 @@ export default function DoctorDetailsPage() {
 
       {/* ================= PATIENTS ================= */}
       {activeTab === "patients" && (
-        <div className="bg-white rounded-2xl border shadow">
-          <table className="w-full text-sm">
-            <thead className="bg-emerald-50">
-              <tr>
-                <th className="p-4 text-left">Name</th>
-                <th className="p-4">Age</th>
-                <th className="p-4">Gender</th>
-                <th className="p-4">Phone</th>
-              </tr>
-            </thead>
-            <tbody>
-              {uniquePatients.map((p: any) => (
-                <tr key={p.id} className="border-t">
-                  <td className="p-4">{p.name}</td>
-                  <td className="p-4">{p.age ?? "—"}</td>
-                  <td className="p-4">{p.gender ?? "—"}</td>
-                  <td className="p-4">{p.phone}</td>
+        <div className="bg-white rounded-2xl border shadow p-4 space-y-4">
+          {/* Search & Filters */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <input
+              type="text"
+              placeholder="Search by name or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:w-1/2 border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+
+            <div className="flex gap-2">
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+                className="border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <option value="">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <select
+                value={ageFilter}
+                onChange={(e) => setAgeFilter(e.target.value)}
+                className="border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              >
+                <option value="">All Ages</option>
+                <option value="0-18">0-18</option>
+                <option value="19-35">19-35</option>
+                <option value="36-60">36-60</option>
+                <option value="60+">60+</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-t border-emerald-100">
+              <thead className="bg-emerald-50 text-emerald-700">
+                <tr>
+                  <th className="p-4 text-left font-medium">Name</th>
+                  <th className="p-4 font-medium">Age</th>
+                  <th className="p-4 font-medium">Gender</th>
+                  <th className="p-4 font-medium">Phone</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredPatients.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-6 text-center text-emerald-600">
+                      No patients found
+                    </td>
+                  </tr>
+                )}
+
+                {filteredPatients.map((p: any) => (
+                  <tr
+                    key={p.id}
+                    className="border-t hover:bg-emerald-50 transition"
+                  >
+                    <td className="p-4 font-medium">{p.name}</td>
+                    <td className="p-4">{p.age ?? "—"}</td>
+                    <td className="p-4">{p.gender ?? "—"}</td>
+                    <td className="p-4">{p.phone}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-     {/* ================= MODAL ================= */}
-{open && (
-  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative">
+      {/* ================= MODAL ================= */}
+      {open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative">
 
-      <button
-        onClick={() => setOpen(false)}
-        className="absolute top-4 right-4 text-gray-500"
-      >
-        <X size={20} />
-      </button>
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 text-gray-500"
+            >
+              <X size={20} />
+            </button>
 
-      <h3 className="text-lg font-semibold text-emerald-800 mb-4">
-        New Appointment
-      </h3>
+            <h3 className="text-lg font-semibold text-emerald-800 mb-4">
+              New Appointment
+            </h3>
 
-      <div className="space-y-4">
-        {/* Select Patient */}
-        <select
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
-          className="w-full border rounded-lg p-2"
-        >
-          <option value="">Select patient</option>
-          {allPatients.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+            <div className="space-y-4">
+              <select
+                value={patientId}
+                onChange={(e) => setPatientId(e.target.value)}
+                className="w-full border rounded-lg p-2"
+              >
+                <option value="">Select patient</option>
+                {allPatients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
 
-        {/* Select Date */}
-        <input
-          type="date"
-          value={date}
-          min={new Date().toISOString().split("T")[0]} // prevent past dates
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full border rounded-lg p-2"
-        />
+              <input
+                type="date"
+                value={date}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full border rounded-lg p-2"
+              />
 
-        {/* Reason */}
-        <input
-          type="text"
-          placeholder="Reason for Visit"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          className="w-full border rounded-lg p-2"
-        />
+              <input
+                type="text"
+                placeholder="Reason for Visit"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full border rounded-lg p-2"
+              />
 
-        {/* Time Slots */}
-        {date && (
-  <div>
-    <label className="block text-sm font-medium text-emerald-700 mb-2">
-      Select Time Slot
-    </label>
-    <div className="grid grid-cols-4 gap-2">
-      {availableSlots.length === 0 && (
-        <p className="text-sm text-red-500 col-span-4">
-          No slots available for this date
-        </p>
-      )}
+              {date && (
+                <div>
+                  <label className="block text-sm font-medium text-emerald-700 mb-2">
+                    Select Time Slot
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {availableSlots.map((slot) => {
+                      const isBooked = doctor.appointments
+                        .filter((a: any) => a.date.split("T")[0] === date)
+                        .map((a: any) =>
+                          new Date(a.date).toTimeString().slice(0, 5)
+                        )
+                        .includes(slot);
 
-      {availableSlots.map((slot) => {
-        // check if slot is booked
-        const isBooked = doctor.appointments
-          .filter((a: any) => a.date.split("T")[0] === date)
-          .map((a: any) => new Date(a.date).toTimeString().slice(0, 5))
-          .includes(slot);
+                      const today = new Date().toISOString().split("T")[0];
+                      const [hour, min] = slot.split(":").map(Number);
+                      const now = new Date();
+                      const isPast =
+                        date === today &&
+                        (hour < now.getHours() ||
+                          (hour === now.getHours() && min <= now.getMinutes()));
 
-        // block past times for today
-        const today = new Date().toISOString().split("T")[0];
-        const [hour, min] = slot.split(":").map(Number);
-        const now = new Date();
-        const isPast = date === today && (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes()));
+                      const disabled = isBooked || isPast;
 
-        const disabled = isBooked || isPast;
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setTime(slot)}
+                          className={`py-1 rounded-xl text-sm font-medium border
+                            ${
+                              disabled
+                                ? "bg-red-100 text-red-500 cursor-not-allowed"
+                                : time === slot
+                                ? "bg-emerald-600 text-white"
+                                : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                            }`}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-        return (
-          <button
-            key={slot}
-            type="button"
-            disabled={disabled}
-            onClick={() => setTime(slot)}
-            className={`py-1 rounded-xl text-sm font-medium border
-              ${
-                disabled
-                  ? "bg-red-100 text-red-500 cursor-not-allowed"
-                  : time === slot
-                  ? "bg-emerald-600 text-white"
-                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-              }`}
-          >
-            {slot}
-          </button>
-        );
-      })}
-    </div>
-  </div>
-)}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setOpen(false)}
+                  className="px-4 py-2 rounded-xl border"
+                >
+                  Cancel
+                </button>
 
+                <button
+                  onClick={createAppointment}
+                  className="px-4 py-2 rounded-xl
+                    bg-gradient-to-r from-emerald-500 to-green-600
+                    text-white font-medium"
+                >
+                  Create
+                </button>
+              </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={() => setOpen(false)}
-            className="px-4 py-2 rounded-xl border"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={createAppointment}
-            className="px-4 py-2 rounded-xl
-              bg-gradient-to-r from-emerald-500 to-green-600
-              text-white font-medium"
-          >
-            Create
-          </button>
+            </div>
+          </div>
         </div>
-
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 }
