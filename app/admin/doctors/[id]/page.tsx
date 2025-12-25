@@ -256,98 +256,131 @@ export default function DoctorDetailsPage() {
         </div>
       )}
 
-      {/* ================= MODAL ================= */}
-      {open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative">
+     {/* ================= MODAL ================= */}
+{open && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative">
 
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-4 right-4 text-gray-500"
-            >
-              <X size={20} />
-            </button>
+      <button
+        onClick={() => setOpen(false)}
+        className="absolute top-4 right-4 text-gray-500"
+      >
+        <X size={20} />
+      </button>
 
-            <h3 className="text-lg font-semibold text-emerald-800 mb-4">
-              New Appointment
-            </h3>
+      <h3 className="text-lg font-semibold text-emerald-800 mb-4">
+        New Appointment
+      </h3>
 
-            <div className="space-y-4">
-              <select
-                value={patientId}
-                onChange={(e) => setPatientId(e.target.value)}
-                className="w-full border rounded-lg p-2"
-              >
-                <option value="">Select patient</option>
-                {allPatients.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+      <div className="space-y-4">
+        {/* Select Patient */}
+        <select
+          value={patientId}
+          onChange={(e) => setPatientId(e.target.value)}
+          className="w-full border rounded-lg p-2"
+        >
+          <option value="">Select patient</option>
+          {allPatients.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
 
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full border rounded-lg p-2"
-              />
+        {/* Select Date */}
+        <input
+          type="date"
+          value={date}
+          min={new Date().toISOString().split("T")[0]} // prevent past dates
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full border rounded-lg p-2"
+        />
 
-              {date && (
-                <div>
-                  <label className="block text-sm font-medium text-emerald-700 mb-2">
-                    Select Time Slot
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {availableSlots.length === 0 && (
-                      <p className="text-sm text-red-500 col-span-4">
-                        No slots available for this date
-                      </p>
-                    )}
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setTime(slot)}
-                        className={`py-1 rounded-xl text-sm font-medium border ${
-                          time === slot
-                            ? "bg-emerald-600 text-white"
-                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                        }`}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* Reason */}
+        <input
+          type="text"
+          placeholder="Reason for Visit"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          className="w-full border rounded-lg p-2"
+        />
 
-              <input
-                type="text"
-                placeholder="Reason for Visit"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="w-full border rounded-lg p-2"
-              />
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={() => setOpen(false)}
-                  className="px-4 py-2 rounded-xl border"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={createAppointment}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Time Slots */}
+        {date && (
+  <div>
+    <label className="block text-sm font-medium text-emerald-700 mb-2">
+      Select Time Slot
+    </label>
+    <div className="grid grid-cols-4 gap-2">
+      {availableSlots.length === 0 && (
+        <p className="text-sm text-red-500 col-span-4">
+          No slots available for this date
+        </p>
       )}
+
+      {availableSlots.map((slot) => {
+        // check if slot is booked
+        const isBooked = doctor.appointments
+          .filter((a: any) => a.date.split("T")[0] === date)
+          .map((a: any) => new Date(a.date).toTimeString().slice(0, 5))
+          .includes(slot);
+
+        // block past times for today
+        const today = new Date().toISOString().split("T")[0];
+        const [hour, min] = slot.split(":").map(Number);
+        const now = new Date();
+        const isPast = date === today && (hour < now.getHours() || (hour === now.getHours() && min <= now.getMinutes()));
+
+        const disabled = isBooked || isPast;
+
+        return (
+          <button
+            key={slot}
+            type="button"
+            disabled={disabled}
+            onClick={() => setTime(slot)}
+            className={`py-1 rounded-xl text-sm font-medium border
+              ${
+                disabled
+                  ? "bg-red-100 text-red-500 cursor-not-allowed"
+                  : time === slot
+                  ? "bg-emerald-600 text-white"
+                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              }`}
+          >
+            {slot}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+)}
+
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            onClick={() => setOpen(false)}
+            className="px-4 py-2 rounded-xl border"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={createAppointment}
+            className="px-4 py-2 rounded-xl
+              bg-gradient-to-r from-emerald-500 to-green-600
+              text-white font-medium"
+          >
+            Create
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
