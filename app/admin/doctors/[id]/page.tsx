@@ -71,6 +71,45 @@ export default function DoctorDetailsPage() {
     return <p className="p-6 text-emerald-700">Loading doctor...</p>;
   }
 
+ const handleCreateAppointment = async () => {
+  if (!patientId || !date || !reason) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/admin/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        doctorId: id,
+        patientId,
+        date,
+        reason,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to create appointment");
+    }
+
+    // ✅ AFTER SAVE → REFETCH DOCTOR
+    const doctorRes = await fetch(`/api/admin/doctors/${id}`);
+    const updatedDoctor = await doctorRes.json();
+    setDoctor(updatedDoctor);
+
+    // close modal + reset
+    setOpen(false);
+    setPatientId("");
+    setDate("");
+    setReason("");
+  } catch (err) {
+    console.error(err);
+    alert("Error creating appointment");
+  }
+};
+
+
   return (
     <div className="p-6 space-y-8 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
 
@@ -241,7 +280,16 @@ export default function DoctorDetailsPage() {
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full border rounded-lg p-2"
               />
+               <button
+  onClick={handleCreateAppointment}
+  className="w-full mt-4 bg-emerald-600 text-white py-2 rounded-xl font-medium"
+>
+  Save Appointment
+</button>
+
             </div>
+        
+
           </div>
         </div>
       )}
