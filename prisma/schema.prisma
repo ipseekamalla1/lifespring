@@ -7,68 +7,98 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/* =========================
+   USER
+========================= */
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
   role      Role
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // Relations
   patient Patient?
   doctor  Doctor?
 }
 
+/* =========================
+   PATIENT
+========================= */
 model Patient {
   id        String   @id @default(uuid())
   userId    String   @unique
+
   name      String?
   age       Int?
   gender    String?
   address   String?
   phone     String?
 
-  user      User     @relation(fields: [userId], references: [id])
-    appointments Appointment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  user        User         @relation(fields: [userId], references: [id])
+  appointments Appointment[]
 }
 
+/* =========================
+   DOCTOR
+========================= */
 model Doctor {
-  id             String   @id @default(uuid())
-  userId         String   @unique
+  id             String       @id @default(uuid())
+  userId         String       @unique
+
   name           String?
   department     String?
   specialization String?
   phone          String?
   experience     Int?
+  status         DoctorStatus @default(ACTIVE)
 
-  user      User     @relation(fields: [userId], references: [id])
-    appointments Appointment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  user         User         @relation(fields: [userId], references: [id])
+  appointments Appointment[]
 }
 
-
+/* =========================
+   APPOINTMENT
+========================= */
 model Appointment {
-  id        String   @id @default(uuid())
+  id        String             @id @default(uuid())
   patientId String
   doctorId  String
 
   date      DateTime
   reason    String
-  status    AppointmentStatus @default(PENDING)
+  status    AppointmentStatus  @default(PENDING)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  patient   Patient @relation(fields: [patientId], references: [id])
-  doctor    Doctor  @relation(fields: [doctorId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@index([doctorId])
+  @@index([patientId])
+  @@index([status])
 }
 
+/* =========================
+   ENUMS
+========================= */
 enum AppointmentStatus {
   PENDING
   CONFIRMED
   CANCELLED
 }
 
+enum DoctorStatus {
+  ACTIVE
+  INACTIVE
+}
 
 enum Role {
   PATIENT

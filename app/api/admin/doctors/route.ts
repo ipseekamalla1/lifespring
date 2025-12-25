@@ -17,12 +17,31 @@ function isValidPhone(phone: string) {
 // ---------------------------------------------------
 export async function GET() {
   const doctors = await prisma.doctor.findMany({
-    include: { user: true },
+    include: {
+      user: true,
+      appointments: {
+        select: {
+          patientId: true,
+        },
+      },
+    },
   });
 
-  return NextResponse.json(doctors);
-}
+  const formattedDoctors = doctors.map((doc) => ({
+    id: doc.id,
+    name: doc.name,
+    specialty: doc.specialization,
+    experience: doc.experience,
+    email: doc.user.email,
+    phone: doc.phone,
+    patientsCount: new Set(
+      doc.appointments.map((a) => a.patientId)
+    ).size,
+    status: doc.appointments.length > 0 ? "Active" : "Inactive",
+  }));
 
+  return NextResponse.json(formattedDoctors);
+}
 // ---------------------------------------------------
 // CREATE DOCTOR
 // ---------------------------------------------------
