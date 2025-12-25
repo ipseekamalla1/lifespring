@@ -71,43 +71,42 @@ export default function DoctorDetailsPage() {
     return <p className="p-6 text-emerald-700">Loading doctor...</p>;
   }
 
- const handleCreateAppointment = async () => {
+ const createAppointment = async () => {
   if (!patientId || !date || !reason) {
     alert("Please fill all fields");
     return;
   }
 
-  try {
-    const res = await fetch("/api/admin/appointments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        doctorId: id,
-        patientId,
-        date,
-        reason,
-      }),
-    });
+  const res = await fetch("/api/admin/appointments", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      doctorId: id,
+      patientId,
+      date,
+      reason,
+    }),
+  });
 
-    if (!res.ok) {
-      throw new Error("Failed to create appointment");
-    }
-
-    // ✅ AFTER SAVE → REFETCH DOCTOR
-    const doctorRes = await fetch(`/api/admin/doctors/${id}`);
-    const updatedDoctor = await doctorRes.json();
-    setDoctor(updatedDoctor);
-
-    // close modal + reset
-    setOpen(false);
-    setPatientId("");
-    setDate("");
-    setReason("");
-  } catch (err) {
-    console.error(err);
-    alert("Error creating appointment");
+  if (!res.ok) {
+    alert("Failed to create appointment");
+    return;
   }
+
+  // reset form
+  setPatientId("");
+  setDate("");
+  setReason("");
+  setOpen(false);
+
+  // 🔥 refresh_toggle
+  fetch(`/api/admin/doctors/${id}`)
+    .then((res) => res.json())
+    .then(setDoctor);
 };
+
 
 
   return (
@@ -275,17 +274,29 @@ export default function DoctorDetailsPage() {
 
               <input
                 type="text"
-                placeholder="Reason"
+                placeholder="Reason for Visit"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 className="w-full border rounded-lg p-2"
               />
-               <button
-  onClick={handleCreateAppointment}
-  className="w-full mt-4 bg-emerald-600 text-white py-2 rounded-xl font-medium"
->
-  Save Appointment
-</button>
+            {/* Buttons */}
+      <div className="flex justify-end gap-3 pt-2">
+        <button
+          onClick={() => setOpen(false)}
+          className="px-4 py-2 rounded-xl border"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={createAppointment}
+          className="px-4 py-2 rounded-xl
+            bg-gradient-to-r from-emerald-500 to-green-600
+            text-white font-medium"
+        >
+          Create
+        </button>
+      </div>
 
             </div>
         
