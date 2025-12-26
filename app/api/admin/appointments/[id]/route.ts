@@ -3,11 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
+const ALLOWED_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED"];
+
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    /* ---------- PARAMS (FIX) ---------- */
+    const { id } = await context.params;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Appointment ID missing" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- AUTH ---------- */
     const cookieStore = await cookies();
     const token = cookieStore.get("session")?.value;
 
@@ -17,18 +30,27 @@ export async function PATCH(
 
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
-    if (decoded.role !== "ADMIN") {
+    if (!["ADMIN", "DOCTOR"].includes(decoded.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    /* ---------- BODY ---------- */
     const { status } = await req.json();
 
-    const updated = await prisma.appointment.update({
-      where: { id: params.id },
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid appointment status" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- UPDATE ---------- */
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id },
       data: { status },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(updatedAppointment);
   } catch (error) {
     console.error("Update appointment error:", error);
     return NextResponse.json(

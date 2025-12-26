@@ -12,6 +12,8 @@ import {
   Plus,
   X,
 } from "lucide-react";
+import { Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function DoctorDetailsPage() {
   const params = useParams();
@@ -39,6 +41,8 @@ export default function DoctorDetailsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [genderFilter, setGenderFilter] = useState("");
   const [ageFilter, setAgeFilter] = useState("");
+  const router = useRouter();
+
 
   /* ---------------- LOAD DOCTOR ---------------- */
   useEffect(() => {
@@ -156,6 +160,30 @@ export default function DoctorDetailsPage() {
       .then(setDoctor);
   };
 
+const updateAppointmentStatus = async (
+  appointmentId: string,
+  status: string
+) => {
+  const res = await fetch(`/api/admin/appointments/${appointmentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  console.log("Updating appointment:", appointmentId);
+
+
+  if (!res.ok) {
+    alert("Failed to update status");
+    return;
+  }
+
+  // Refresh doctor data
+  fetch(`/api/admin/doctors/${id}`)
+    .then((res) => res.json())
+    .then(setDoctor);
+};
+
+
   if (!doctor) return <p className="p-6 text-emerald-700">Loading doctor...</p>;
 
   return (
@@ -245,18 +273,26 @@ export default function DoctorDetailsPage() {
                   <td className="p-4">{new Date(a.date).toLocaleString()}</td>
                   <td className="p-4">{a.reason}</td>
                   <td className="p-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        a.status === "CONFIRMED"
-                          ? "bg-green-100 text-green-700"
-                          : a.status === "CANCELLED"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {a.status}
-                    </span>
-                  </td>
+  <select
+    value={a.status}
+    onChange={(e) =>
+      updateAppointmentStatus(a.id, e.target.value)
+    }
+    className={`px-3 py-1 rounded-full text-xs font-semibold border
+      ${
+        a.status === "CONFIRMED"
+          ? "bg-green-100 text-green-700"
+          : a.status === "CANCELLED"
+          ? "bg-red-100 text-red-700"
+          : "bg-yellow-100 text-yellow-700"
+      }`}
+  >
+    <option value="PENDING">Pending</option>
+    <option value="CONFIRMED">Confirmed</option>
+    <option value="CANCELLED">Cancelled</option>
+  </select>
+</td>
+
                 </tr>
               ))}
             </tbody>
@@ -265,80 +301,99 @@ export default function DoctorDetailsPage() {
       )}
 
       {/* ================= PATIENTS ================= */}
-      {activeTab === "patients" && (
-        <div className="bg-white rounded-2xl border shadow p-4 space-y-4">
-          {/* Search & Filters */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <input
-              type="text"
-              placeholder="Search by name or phone..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-1/2 border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            />
+{activeTab === "patients" && (
+  <div className="bg-white rounded-2xl border shadow space-y-4">
 
-            <div className="flex gap-2">
-              <select
-                value={genderFilter}
-                onChange={(e) => setGenderFilter(e.target.value)}
-                className="border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              >
-                <option value="">All Genders</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
+    {/* SEARCH & FILTER BAR */}
+    <div className="flex flex-col md:flex-row gap-4 p-4 border-b">
+      <input
+        type="text"
+        placeholder="Search by name or phone..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full md:w-1/2 border rounded-xl px-4 py-2 text-sm
+        focus:outline-none focus:ring-2 focus:ring-emerald-400"
+      />
 
-              <select
-                value={ageFilter}
-                onChange={(e) => setAgeFilter(e.target.value)}
-                className="border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              >
-                <option value="">All Ages</option>
-                <option value="0-18">0-18</option>
-                <option value="19-35">19-35</option>
-                <option value="36-60">36-60</option>
-                <option value="60+">60+</option>
-              </select>
-            </div>
-          </div>
+      <div className="flex gap-3">
+        <select
+          value={genderFilter}
+          onChange={(e) => setGenderFilter(e.target.value)}
+          className="border rounded-xl px-4 py-2 text-sm
+          focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        >
+          <option value="">All Genders</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-t border-emerald-100">
-              <thead className="bg-emerald-50 text-emerald-700">
-                <tr>
-                  <th className="p-4 text-left font-medium">Name</th>
-                  <th className="p-4 font-medium">Age</th>
-                  <th className="p-4 font-medium">Gender</th>
-                  <th className="p-4 font-medium">Phone</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPatients.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-6 text-center text-emerald-600">
-                      No patients found
-                    </td>
-                  </tr>
-                )}
+        <select
+          value={ageFilter}
+          onChange={(e) => setAgeFilter(e.target.value)}
+          className="border rounded-xl px-4 py-2 text-sm
+          focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        >
+          <option value="">All Ages</option>
+          <option value="0-18">0-18</option>
+          <option value="19-35">19-35</option>
+          <option value="36-60">36-60</option>
+          <option value="60+">60+</option>
+        </select>
+      </div>
+    </div>
 
-                {filteredPatients.map((p: any) => (
-                  <tr
-                    key={p.id}
-                    className="border-t hover:bg-emerald-50 transition"
-                  >
-                    <td className="p-4 font-medium">{p.name}</td>
-                    <td className="p-4">{p.age ?? "—"}</td>
-                    <td className="p-4">{p.gender ?? "—"}</td>
-                    <td className="p-4">{p.phone}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+    {/* TABLE */}
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="bg-emerald-50 text-emerald-700">
+          <tr>
+            <th className="p-4 text-left font-medium">Patient</th>
+            <th className="p-4 font-medium">Age</th>
+            <th className="p-4 font-medium">Gender</th>
+            <th className="p-4 font-medium">Phone</th>
+            <th className="p-4 font-medium text-center">Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredPatients.length === 0 && (
+            <tr>
+              <td colSpan={5} className="p-6 text-center text-emerald-600">
+                No patients found
+              </td>
+            </tr>
+          )}
+
+          {filteredPatients.map((p: any) => (
+            <tr
+              key={p.id}
+              className="border-t hover:bg-emerald-50 transition"
+            >
+              <td className="p-4 font-medium">{p.name}</td>
+              <td className="p-4 text-center">{p.age ?? "—"}</td>
+              <td className="p-4 text-center">{p.gender ?? "—"}</td>
+              <td className="p-4 text-center">{p.phone}</td>
+
+              {/* VIEW BUTTON */}
+              <td className="p-4 text-center">
+                <button
+                  onClick={() => router.push(`/admin/patients/${p.id}`)}
+                  className="inline-flex items-center gap-1
+                  text-emerald-600 hover:text-emerald-800"
+                >
+                  <Eye size={18} />
+                  <span className="hidden md:inline text-sm">View</span>
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
 
       {/* ================= MODAL ================= */}
       {open && (
