@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
 type Appointment = {
@@ -18,7 +18,7 @@ type Appointment = {
   };
 };
 
-const statusStyles = {
+const statusStyles: Record<Appointment["status"], string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
   CONFIRMED: "bg-emerald-100 text-emerald-800",
   CANCELLED: "bg-red-100 text-red-800",
@@ -28,6 +28,12 @@ export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Filters
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [doctorFilter, setDoctorFilter] = useState("ALL");
+  const [sortOrder, setSortOrder] = useState("DESC");
+
   useEffect(() => {
     fetchAppointments();
   }, []);
@@ -35,10 +41,6 @@ export default function AdminAppointments() {
   const fetchAppointments = async () => {
     try {
       const res = await fetch("/api/admin/appointments");
-      if (!res.ok) {
-        setAppointments([]);
-        return;
-      }
       const data = await res.json();
       setAppointments(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -49,128 +51,180 @@ export default function AdminAppointments() {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (
+    id: string,
+    status: Appointment["status"]
+  ) => {
     await fetch(`/api/admin/appointments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+
     fetchAppointments();
   };
 
-  if (loading) {
-    return (
-      <div className="p-8 text-emerald-700 font-medium">
-        Loading appointments…
-      </div>
+  const doctors = useMemo(() => {
+    return Array.from(
+      new Set(appointments.map(a => a.doctor?.name).filter(Boolean))
     );
+  }, [appointments]);
+
+  const filteredAppointments = useMemo(() => {
+    let data = [...appointments];
+
+    if (search) {
+      const q = search.toLowerCase();
+      data = data.filter(
+        a =>
+          a.patient?.name?.toLowerCase().includes(q) ||
+          a.patient?.phone?.includes(q) ||
+          a.doctor?.name?.toLowerCase().includes(q)
+      );
+    }
+
+    if (statusFilter !== "ALL") {
+      data = data.filter(a => a.status === statusFilter);
+    }
+
+    if (doctorFilter !== "ALL") {
+      data = data.filter(a => a.doctor?.name === doctorFilter);
+    }
+
+    data.sort((a, b) =>
+      sortOrder === "DESC"
+        ? new Date(b.date).getTime() - new Date(a.date).getTime()
+        : new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    return data;
+  }, [appointments, search, statusFilter, doctorFilter, sortOrder]);
+
+  if (loading) {
+    return <div className="p-8 text-emerald-700">Loading appointments…</div>;
   }
 
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <h1 className="text-3xl font-bold text-emerald-900">
           Appointments Management
         </h1>
-        <p className="text-sm text-emerald-700 mt-1">
-          View, monitor, and manage all patient appointments in real time.
+        <p className="text-sm text-emerald-700">
+          Admin view for monitoring and managing appointments
         </p>
       </motion.div>
 
-      {/* Table Container */}
-      <div className="overflow-x-auto rounded-2xl border border-emerald-200 bg-white shadow-sm">
-        <table className="w-full border-collapse">
-          <thead className="bg-gradient-to-r from-emerald-600 to-green-500 text-white">
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-2xl border shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+        <input
+          placeholder="Search patient / phone / doctor"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded-md border px-3 py-2 text-sm"
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="ALL">All Status</option>
+          <option value="PENDING">Pending</option>
+          <option value="CONFIRMED">Confirmed</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+
+        <select
+          value={doctorFilter}
+          onChange={(e) => setDoctorFilter(e.target.value)}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="ALL">All Doctors</option>
+          {doctors.map(doc => (
+            <option key={doc} value={doc}>
+              {doc}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          <option value="DESC">Latest First</option>
+          <option value="ASC">Oldest First</option>
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+        <table className="w-full">
+          <thead className="bg-emerald-600 text-white">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Patient</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Doctor</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Reason</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
+              <th className="px-4 py-3 text-left text-sm">Date</th>
+              <th className="px-4 py-3 text-left text-sm">Patient</th>
+              <th className="px-4 py-3 text-left text-sm">Doctor</th>
+              <th className="px-4 py-3 text-left text-sm">Reason</th>
+              <th className="px-4 py-3 text-left text-sm">Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {appointments.length === 0 && (
+            {filteredAppointments.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-6 text-center text-emerald-700"
-                >
-                  No appointments found.
+                <td colSpan={5} className="p-6 text-center text-gray-500">
+                  No appointments found
                 </td>
               </tr>
             )}
 
-            {appointments.map((appt, index) => (
-              <motion.tr
-                key={appt.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: index * 0.03 }}
-                className="border-b last:border-none hover:bg-emerald-50 transition"
-              >
-                {/* Date */}
-                <td className="px-4 py-3 text-sm text-gray-700">
+            {filteredAppointments.map(appt => (
+              <tr key={appt.id} className="border-b hover:bg-emerald-50">
+                <td className="px-4 py-3 text-sm">
                   {new Date(appt.date).toLocaleString()}
                 </td>
 
-                {/* Patient */}
                 <td className="px-4 py-3 text-sm">
-                  <div className="font-medium text-gray-900">
-                    {appt.patient?.name || "—"}
-                  </div>
+                  <div className="font-medium">{appt.patient?.name || "—"}</div>
                   <div className="text-xs text-gray-500">
                     {appt.patient?.phone || ""}
                   </div>
                 </td>
 
-                {/* Doctor */}
                 <td className="px-4 py-3 text-sm">
-                  <div className="font-medium text-gray-900">
-                    {appt.doctor?.name || "—"}
-                  </div>
+                  <div className="font-medium">{appt.doctor?.name || "—"}</div>
                   <div className="text-xs text-gray-500">
                     {appt.doctor?.department || ""}
                   </div>
                 </td>
 
-                {/* Reason */}
-                <td className="px-4 py-3 text-sm text-gray-700">
-                  {appt.reason}
-                </td>
+                <td className="px-4 py-3 text-sm">{appt.reason}</td>
 
-                {/* Status */}
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${statusStyles[appt.status]}`}
-                    >
-                      {appt.status}
-                    </span>
+              <td className="px-4 py-3 text-sm">
+  <select
+    value={appt.status}
+    onChange={(e) =>
+      updateStatus(
+        appt.id,
+        e.target.value as Appointment["status"]
+      )
+    }
+    className={`
+      px-3 py-1 rounded-full text-xs font-semibold cursor-pointer
+      border-none outline-none appearance-none
+      ${statusStyles[appt.status]}
+    `}
+  >
+    <option value="PENDING">PENDING</option>
+    <option value="CONFIRMED">CONFIRMED</option>
+    <option value="CANCELLED">CANCELLED</option>
+  </select>
+</td>
 
-                    <select
-                      value={appt.status}
-                      onChange={(e) =>
-                        updateStatus(appt.id, e.target.value)
-                      }
-                      className="
-                        ml-2 rounded-md border border-emerald-300 
-                        bg-white px-2 py-1 text-xs
-                        focus:outline-none focus:ring-2 focus:ring-emerald-400
-                      "
-                    >
-                      <option value="PENDING">PENDING</option>
-                      <option value="CONFIRMED">CONFIRMED</option>
-                      <option value="CANCELLED">CANCELLED</option>
-                    </select>
-                  </div>
-                </td>
-              </motion.tr>
+              </tr>
             ))}
           </tbody>
         </table>

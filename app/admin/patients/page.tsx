@@ -179,7 +179,7 @@ export default function PatientsPage() {
       <Card className="rounded-2xl shadow">
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-emerald-100">
+            <thead className="bg-emerald-600 text-white">
               <tr>
                 <th onClick={() => handleSort("name")} className="p-4 cursor-pointer">Name</th>
                 <th className="p-4">Email</th>
