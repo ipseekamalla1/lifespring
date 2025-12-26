@@ -49,9 +49,10 @@ export default function Sidebar() {
 
         <nav className="space-y-2">
           {navItem("/admin/dashboard", "Dashboard", Home)}
-          {navItem("/admin/appointments", "Appointments", CalendarCheck)}
+         
           {navItem("/admin/doctors", "Doctors", Stethoscope)}
           {navItem("/admin/patients", "Patients", Users)}
+           {navItem("/admin/appointments", "Appointments", CalendarCheck)}
           {navItem("/admin/reports", "Reports", BarChart3)}
         </nav>
       </div>

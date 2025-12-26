@@ -285,40 +285,136 @@ export default function DoctorsPage() {
       </Card>
 
       {/* ===== MODAL (UNCHANGED) ===== */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden">
-            <div className="flex justify-between px-6 py-4 border-b bg-gray-50">
-              <h2 className="text-xl font-semibold">
-                {isEdit ? "Edit Doctor Profile" : "Add New Doctor"}
-              </h2>
-              <button onClick={() => setOpen(false)}><X /></button>
-            </div>
+     {open && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden">
 
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {["name","email","department","specialization","phone","experience"].map((key) => (
-                <input
-                  key={key}
-                  placeholder={key}
-                  value={form[key]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  disabled={isEdit && key === "email"}
-                  className="border rounded-lg px-3 py-2"
-                />
-              ))}
-            </div>
+      {/* Header */}
+      <div className="flex justify-between items-center px-8 py-5 border-b bg-gradient-to-r from-emerald-50 to-white">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            {isEdit ? "Edit Doctor Profile" : "Add New Doctor"}
+          </h2>
+          <p className="text-sm text-gray-500">
+            Enter professional and contact details
+          </p>
+        </div>
+        <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-gray-800">
+          <X size={22} />
+        </button>
+      </div>
 
-            <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50">
-              <button onClick={() => setOpen(false)} className="px-4 py-2 border rounded-lg">
-                Cancel
-              </button>
-              <button onClick={handleSubmit} className="px-6 py-2 bg-emerald-600 text-white rounded-lg">
-                {isEdit ? "Update Doctor" : "Create Doctor"}
-              </button>
-            </div>
+      {/* Body */}
+      <div className="px-8 py-6 space-y-6">
+
+        {/* Name – FULL WIDTH */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name
+          </label>
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Enter Full Name"
+            className="w-full h-12 border rounded-xl px-4 focus:ring-2 focus:ring-emerald-500"
+          />
+        </div>
+
+        {/* Grid Fields */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              disabled={isEdit}
+              placeholder="Enter email"
+              className={`w-full h-11 border rounded-xl px-4 ${
+                isEdit ? "bg-gray-100 cursor-not-allowed" : ""
+              }`}
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number
+            </label>
+            <input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="Enter Number"
+              className="w-full h-11 border rounded-xl px-4"
+            />
+          </div>
+
+          {/* Department */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
+            <input
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+              placeholder="Enter department"
+              className="w-full h-11 border rounded-xl px-4"
+            />
+          </div>
+
+          {/* Specialization */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Specialization
+            </label>
+            <input
+              value={form.specialization}
+              onChange={(e) => setForm({ ...form, specialization: e.target.value })}
+              placeholder="Enter Speciality"
+              className="w-full h-11 border rounded-xl px-4"
+            />
+          </div>
+
+          {/* Experience */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Years of Experience
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={form.experience}
+              onChange={(e) => setForm({ ...form, experience: e.target.value })}
+              placeholder="Enter Experience"
+              className="w-full h-11 border rounded-xl px-4"
+            />
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-4 px-8 py-5 border-t bg-gray-50">
+        <button
+          onClick={() => setOpen(false)}
+          className="px-6 py-2 rounded-xl border hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="px-8 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow"
+        >
+          {isEdit ? "Update Doctor" : "Create Doctor"}
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
 
     </div>
   );
