@@ -1,223 +1,227 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Eye, Plus, Pencil, Trash2, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+
+/* ================= TYPES ================= */
+
+type Patient = {
+  id: string;
+  name: string;
+  age: number | null;
+  gender: string | null;
+  address: string | null;
+  phone: string;
+  user: { email: string };
+};
+
+/* ================= EMPTY FORM ================= */
+
+const emptyForm = {
+  id: "",
+  name: "",
+  email: "",
+  age: "",
+  gender: "",
+  address: "",
+  phone: "",
+};
+
+/* ================= COMPONENT ================= */
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [editPatient, setEditPatient] = useState(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [open, setOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+  const [form, setForm] = useState<any>(emptyForm);
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    age: "",
-    gender: "",
-    address: "",
-    phone: "",
-  });
+  /* SEARCH + SORT */
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<"name" | "age" | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const [errors, setErrors] = useState({});
+  /* FILTERS */
+  const [showFilters, setShowFilters] = useState(false);
 
-  const validateForm = () => {
-    let e = {};
+  /* ================= DATA ================= */
 
-    if (!form.name.trim()) e.name = "Name required.";
-    if (!editPatient && !form.email.trim()) e.email = "Email required.";
-
-    if (!editPatient && form.email && !/^\S+@\S+\.\S+$/.test(form.email))
-      e.email = "Invalid email.";
-
-    if (!form.phone.trim()) e.phone = "Phone required.";
-    if (form.phone.length < 7) e.phone = "Phone must be at least 7 digits.";
-
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const fetchPatients = async () => {
+  const loadPatients = async () => {
     const res = await fetch("/api/admin/patients");
     const data = await res.json();
-    setPatients(data);
+    setPatients(Array.isArray(data) ? data : []);
   };
 
   useEffect(() => {
-    fetchPatients();
+    loadPatients();
   }, []);
 
-  const openAddModal = () => {
-    setEditPatient(null);
-    setForm({
-      name: "",
-      email: "",
-      age: "",
-      gender: "",
-      address: "",
-      phone: "",
+  /* ================= ACTIONS ================= */
+
+  const handleSubmit = async () => {
+    await fetch("/api/admin/patients", {
+      method: isEdit ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
     });
-    setErrors({});
-    setIsOpen(true);
+
+    setOpen(false);
+    setForm(emptyForm);
+    setIsEdit(false);
+    loadPatients();
   };
 
-  const openEditModal = (p) => {
-    setEditPatient(p);
-    setForm({
-      name: p.name || "",
-      email: p.user.email,
-      age: p.age || "",
-      gender: p.gender || "",
-      address: p.address || "",
-      phone: p.phone || "",
-    });
-    setErrors({});
-    setIsOpen(true);
-  };
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this patient?")) return;
 
-  const handleSave = async () => {
-    if (!validateForm()) return;
-
-    setLoading(true);
-
-    if (editPatient) {
-      await fetch("/api/admin/patients", {
-        method: "PUT",
-        body: JSON.stringify({ id: editPatient.id, ...form }),
-      });
-    } else {
-      await fetch("/api/admin/patients", {
-        method: "POST",
-        body: JSON.stringify(form),
-      });
-    }
-
-    setLoading(false);
-    setIsOpen(false);
-    fetchPatients();
-  };
-
-  const handleDelete = async (id) => {
     await fetch("/api/admin/patients", {
       method: "DELETE",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    fetchPatients();
+
+    loadPatients();
   };
 
+  const openEdit = (p: Patient) => {
+    setIsEdit(true);
+    setForm({
+      id: p.id,
+      name: p.name,
+      email: p.user.email,
+      age: p.age ?? "",
+      gender: p.gender ?? "",
+      address: p.address ?? "",
+      phone: p.phone,
+    });
+    setOpen(true);
+  };
+
+  /* ================= SORT ================= */
+
+  const handleSort = (key: "name" | "age") => {
+    if (sortKey === key) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
+    }
+  };
+
+  /* ================= FILTERED DATA ================= */
+
+  const filteredPatients = patients
+    .filter((p) => {
+      const q = search.toLowerCase();
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.user.email.toLowerCase().includes(q) ||
+        p.phone.includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (!sortKey) return 0;
+      const aVal = a[sortKey] ?? "";
+      const bVal = b[sortKey] ?? "";
+      return sortOrder === "asc"
+        ? String(aVal).localeCompare(String(bVal))
+        : String(bVal).localeCompare(String(aVal));
+    });
+
+  /* ================= UI ================= */
+
   return (
-    <div className="space-y-6 p-4">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
+
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Patients</h1>
-        <Button onClick={openAddModal}>Add Patient</Button>
+        <h1 className="text-3xl font-bold text-emerald-800">Patients</h1>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} className="mr-2" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+          </Button>
+
+          <Button
+            className="bg-emerald-600"
+            onClick={() => {
+              setForm(emptyForm);
+              setIsEdit(false);
+              setOpen(true);
+            }}
+          >
+            <Plus size={18} className="mr-2" /> Add Patient
+          </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+      {/* SEARCH */}
+      <input
+        placeholder="Search patients..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="px-4 py-2 border rounded-lg w-64"
+      />
 
-            <TableBody>
-              {patients.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.name}</TableCell>
-                  <TableCell>{p.user.email}</TableCell>
-                  <TableCell>{p.age}</TableCell>
-                  <TableCell>{p.gender}</TableCell>
-                  <TableCell>{p.address}</TableCell>
-                  <TableCell>{p.phone}</TableCell>
+      {/* FILTER PANEL (reserved for future filters) */}
+      {showFilters && (
+        <Card className="p-4 text-sm text-gray-600">
+          Filters can be added here later (status, gender, age, etc.)
+        </Card>
+      )}
 
-                  <TableCell className="space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditModal(p)}>Edit</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(p.id)}>Delete</Button>
-                  </TableCell>
-                </TableRow>
+      {/* TABLE */}
+      <Card className="rounded-2xl shadow">
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-emerald-100">
+              <tr>
+                <th onClick={() => handleSort("name")} className="p-4 cursor-pointer">Name</th>
+                <th className="p-4">Email</th>
+                <th onClick={() => handleSort("age")} className="p-4 cursor-pointer">Age</th>
+                <th className="p-4">Phone</th>
+                <th className="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredPatients.map((p) => (
+                <tr key={p.id} className="border-t hover:bg-emerald-50">
+                  <td className="p-4">{p.name}</td>
+                  <td className="p-4">{p.user.email}</td>
+                  <td className="p-4">{p.age ?? "-"}</td>
+                  <td className="p-4">{p.phone}</td>
+
+                  <td className="p-4 flex justify-center gap-2">
+                    <Link href={`/admin/patients/${p.id}`} className="p-2 hover:bg-emerald-100 rounded">
+                      <Eye size={16} />
+                    </Link>
+                    <button onClick={() => openEdit(p)} className="p-2 hover:bg-blue-100 rounded">
+                      <Pencil size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
               ))}
-            </TableBody>
 
-          </Table>
+              {filteredPatients.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center p-6 text-gray-500">
+                    No patients found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
-
-      {/* MODAL */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editPatient ? "Edit Patient" : "Add Patient"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <Input
-              placeholder="Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            {errors.name && <p className="text-red-500">{errors.name}</p>}
-
-            {!editPatient && (
-              <>
-                <Input
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-                {errors.email && <p className="text-red-500">{errors.email}</p>}
-              </>
-            )}
-
-            <Input
-              placeholder="Age"
-              value={form.age}
-              onChange={(e) => setForm({ ...form, age: e.target.value })}
-            />
-
-            <Input
-              placeholder="Gender"
-              value={form.gender}
-              onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            />
-
-            <Input
-              placeholder="Address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-
-            <Input
-              placeholder="Phone"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            />
-            {errors.phone && <p className="text-red-500">{errors.phone}</p>}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={loading}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={loading}>
-              {loading ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
