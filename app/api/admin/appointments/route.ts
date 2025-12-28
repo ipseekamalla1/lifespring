@@ -49,7 +49,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    // AUTH
+    /* ---------- AUTH ---------- */
     const cookieStore = await cookies();
     const token = cookieStore.get("session")?.value;
 
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // DATA
+    /* ---------- DATA ---------- */
     const { doctorId, patientId, date, reason } = await req.json();
 
     if (!doctorId || !patientId || !date || !reason) {
@@ -72,19 +72,46 @@ export async function POST(req: Request) {
       );
     }
 
+    const appointmentDate = new Date(date);
+    if (isNaN(appointmentDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid date format" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- CHECK DOUBLE BOOKING ---------- */
+    const existing = await prisma.appointment.findFirst({
+      where: {
+        doctorId,
+        date: appointmentDate,
+        status: {
+          not: "CANCELLED",
+        },
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Doctor already booked for this time slot" },
+        { status: 409 }
+      );
+    }
+
+    /* ---------- CREATE ---------- */
     const appointment = await prisma.appointment.create({
       data: {
         doctorId,
         patientId,
-        date: new Date(date),
+        date: appointmentDate,
         reason,
         status: "PENDING",
       },
     });
 
-    return NextResponse.json(appointment);
+    return NextResponse.json(appointment, { status: 201 });
   } catch (error) {
-    console.error(error);
+    console.error("Create appointment error:", error);
     return NextResponse.json(
       { error: "Failed to create appointment" },
       { status: 500 }

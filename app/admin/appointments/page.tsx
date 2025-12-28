@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+
 
 type Appointment = {
   id: string;
@@ -27,6 +29,7 @@ const statusStyles: Record<Appointment["status"], string> = {
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+const router = useRouter();
 
   // Filters
   const [search, setSearch] = useState("");
@@ -50,6 +53,10 @@ export default function AdminAppointments() {
       setLoading(false);
     }
   };
+
+  const addAppointment= async()=>{
+    router.push("/admin/appointments/new");
+  }
 
   const updateStatus = async (
     id: string,
@@ -107,14 +114,28 @@ export default function AdminAppointments() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-3xl font-bold text-emerald-900">
-          Appointments Management
-        </h1>
-        <p className="text-sm text-emerald-700">
-          Admin view for monitoring and managing appointments
-        </p>
-      </motion.div>
+     {/* Header */}
+<motion.div
+  initial={{ opacity: 0, y: -10 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+>
+  <div>
+    <h1 className="text-3xl font-bold text-emerald-900">
+      Appointments Management
+    </h1>
+    <p className="text-sm text-emerald-700">
+      Admin view for monitoring and managing appointments
+    </p>
+  </div>
+
+  <button
+    onClick={addAppointment}
+    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg text-sm font-medium"
+  >
+    + Add Appointment
+  </button>
+</motion.div>
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -136,18 +157,7 @@ export default function AdminAppointments() {
           <option value="CANCELLED">Cancelled</option>
         </select>
 
-        <select
-          value={doctorFilter}
-          onChange={(e) => setDoctorFilter(e.target.value)}
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          <option value="ALL">All Doctors</option>
-          {doctors.map(doc => (
-            <option key={doc} value={doc}>
-              {doc}
-            </option>
-          ))}
-        </select>
+       
 
         <select
           value={sortOrder}

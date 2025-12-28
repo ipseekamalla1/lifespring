@@ -86,7 +86,7 @@ export default function DoctorDashboard() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
-          <Button onClick={() => router.push("/doctor/appointments")}>
+          <Button onClick={() => CANCELLED.push("/doctor/appointments")}>
             View Appointments
           </Button>
           <Button
