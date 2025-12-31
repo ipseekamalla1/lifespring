@@ -25,7 +25,7 @@ export default function AdminSettingsPage() {
 
       {/* Content */}
       {activeTab === "profile" && <ProfileTab />}
-      {activeTab === "department" && <DepartmentTab />}
+     
     </div>
   );
 }

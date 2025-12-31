@@ -9,6 +9,7 @@ import {
   Stethoscope,
   CalendarCheck,
   BarChart3,
+  User
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
@@ -55,6 +56,7 @@ export default function Sidebar() {
           {navItem("/admin/doctors", "Doctors", Stethoscope)}
           {navItem("/admin/patients", "Patients", Users)}
            {navItem("/admin/appointments", "Appointments", CalendarCheck)}
+           {navItem("/admin/users", "Users", User)}
           {navItem("/admin/reports", "Reports", BarChart3)}
             {navItem("/admin/settings", "Settings", Settings)}
 
