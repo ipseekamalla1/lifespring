@@ -3,9 +3,10 @@
 import { useState } from "react";
 import SettingsTabs from "./SettingsTabs";
 import ProfileTab from "./ProfileTab";
-import DepartmentTab from "./DepartmentTab.tsx";
+import DepartmentTab from "./DepartmentTab";
+import AdminManagementTab from "./AdminMangementTab";
 
-export type Tab = "profile" | "department";
+export type Tab = "profile" | "department" | "admin";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
@@ -16,7 +17,7 @@ export default function AdminSettingsPage() {
       <div>
         <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="text-muted-foreground">
-          Manage your profile and department details
+          Manage system configuration and administrators
         </p>
       </div>
 
@@ -25,7 +26,8 @@ export default function AdminSettingsPage() {
 
       {/* Content */}
       {activeTab === "profile" && <ProfileTab />}
-     
+      {activeTab === "department" && <DepartmentTab />}
+      {activeTab === "admin" && <AdminManagementTab />}
     </div>
   );
 }

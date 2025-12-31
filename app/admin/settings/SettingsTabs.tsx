@@ -1,5 +1,3 @@
-import { User, Building2 } from "lucide-react";
-import TabButton from "./TabButton";
 import { Tab } from "./page";
 
 export default function SettingsTabs({
@@ -9,21 +7,27 @@ export default function SettingsTabs({
   activeTab: Tab;
   setActiveTab: (tab: Tab) => void;
 }) {
-  return (
-    <div className="flex gap-2 border-b">
-      <TabButton
-        active={activeTab === "profile"}
-        onClick={() => setActiveTab("profile")}
-        icon={<User size={16} />}
-        label="Profile"
-      />
+  const tabClass = (tab: Tab) =>
+    `px-1 pb-3 text-sm font-medium cursor-pointer transition
+     ${
+       activeTab === tab
+         ? "text-emerald-700 border-b-2 border-emerald-600"
+         : "text-muted-foreground hover:text-emerald-700"
+     }`;
 
-      <TabButton
-        active={activeTab === "department"}
-        onClick={() => setActiveTab("department")}
-        icon={<Building2 size={16} />}
-        label="Department"
-      />
+  return (
+    <div className="border-b">
+      <div className="flex gap-8">
+        <button onClick={() => setActiveTab("profile")} className={tabClass("profile")}>
+          Profile
+        </button>
+
+        
+
+        <button onClick={() => setActiveTab("admin")} className={tabClass("admin")}>
+          Admin Management
+        </button>
+      </div>
     </div>
   );
 }
