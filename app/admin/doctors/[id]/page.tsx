@@ -202,7 +202,7 @@ const updateAppointmentStatus = async (
           <h1 className="text-2xl font-semibold text-emerald-800">
             Dr. {doctor.name}
           </h1>
-    
+      
           <p className="text-emerald-700">
              {doctor.department?.name}
           </p>
