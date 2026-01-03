@@ -1,24 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import {
+  CalendarDays,
+  Phone,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Appointment = {
   id: string;
   date: string;
-  time: string;
-  status: string;
-  patient?: {
-    name?: string;
-    phone?: string;
-    gender?: string;
-    age?: number;
+  reason: string;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  patient: {
+    name: string | null;
+    phone: string | null;
   };
+};
+
+const statusStyles: Record<Appointment["status"], string> = {
+  PENDING: "bg-yellow-100 text-yellow-800",
+  CONFIRMED: "bg-emerald-100 text-emerald-800",
+  CANCELLED: "bg-red-100 text-red-800",
 };
 
 export default function DoctorAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchAppointments();
@@ -28,101 +40,145 @@ export default function DoctorAppointmentsPage() {
     try {
       const res = await fetch("/api/doctor/appointments");
       const data = await res.json();
-      setAppointments(data);
-    } catch (error) {
-      console.error("Failed to load appointments", error);
+      setAppointments(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error("Failed to load appointments");
     } finally {
       setLoading(false);
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    await fetch(`/api/doctor/appointments/${id}`, {
+  const updateStatus = async (
+    id: string,
+    status: Appointment["status"]
+  ) => {
+    await fetch("/api/doctor/appointments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ id, status }),
     });
 
-    setAppointments((prev) =>
-      prev.map((appt) =>
-        appt.id === id ? { ...appt, status } : appt
-      )
-    );
+    toast.success("Appointment updated");
+    fetchAppointments();
   };
 
+  const filteredAppointments = useMemo(() => {
+    if (!search) return appointments;
+    const q = search.toLowerCase();
+    return appointments.filter(
+      a =>
+        a.patient?.name?.toLowerCase().includes(q) ||
+        a.patient?.phone?.includes(q) ||
+        a.reason.toLowerCase().includes(q)
+    );
+  }, [appointments, search]);
+
   if (loading) {
-    return <p className="p-6">Loading appointments...</p>;
+    return <div className="p-8 text-emerald-700">Loading appointments…</div>;
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">All Appointments</h1>
+    <div className="p-8 space-y-6">
+      {/* HEADER */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h1 className="text-3xl font-bold text-emerald-900">
+          My Appointments
+        </h1>
+        <p className="text-sm text-emerald-700">
+          Manage your scheduled patient appointments
+        </p>
+      </motion.div>
 
-      {appointments.length === 0 && (
-        <p>No appointments found.</p>
-      )}
+      {/* SEARCH */}
+      <div className="bg-white p-4 rounded-2xl border shadow-sm">
+        <input
+          placeholder="Search patient / phone / reason"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border px-3 py-2 text-sm"
+        />
+      </div>
 
+      {/* LIST */}
       <div className="space-y-4">
-        {appointments.map((appointment) => (
-          <div
-            key={appointment.id}
-            className="border p-4 rounded-lg"
-          >
-            <p>
-              <strong>Patient:</strong>{" "}
-              {appointment.patient?.name ?? "N/A"}
-            </p>
-
-            <p>
-              <strong>Phone:</strong>{" "}
-              {appointment.patient?.phone ?? "N/A"}
-            </p>
-
-            <p>
-              <strong>Gender:</strong>{" "}
-              {appointment.patient?.gender ?? "N/A"}
-            </p>
-
-            <p>
-              <strong>Age:</strong>{" "}
-              {appointment.patient?.age ?? "N/A"}
-            </p>
-
-            <p>
-              <strong>Date:</strong>{" "}
-              {new Date(appointment.date).toLocaleDateString()}
-            </p>
-
-            <p>
-              <strong>Time:</strong> {appointment.time}
-            </p>
-
-            <p>
-              <strong>Status:</strong>{" "}
-              <span className="capitalize">{appointment.status}</span>
-            </p>
-
-            <div className="flex gap-2 mt-3">
-              <Button
-                onClick={() =>
-                  updateStatus(appointment.id, "CONFIRMED")
-                }
-                disabled={appointment.status === "CONFIRMED"}
-              >
-                Confirm
-              </Button>
-
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  updateStatus(appointment.id, "CANCELLED")
-                }
-                disabled={appointment.status === "CANCELLED"}
-              >
-                Cancel
-              </Button>
-            </div>
+        {filteredAppointments.length === 0 && (
+          <div className="bg-white p-6 rounded-2xl border shadow-sm text-center text-gray-500">
+            No appointments found
           </div>
+        )}
+
+        {filteredAppointments.map((appt, index) => (
+          <motion.div
+            key={appt.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.03 }}
+            className="bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition"
+          >
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              {/* LEFT */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                  <User size={18} />
+                  {appt.patient?.name || "Unknown Patient"}
+                </div>
+
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <CalendarDays size={16} />
+                    {new Date(appt.date).toLocaleString()}
+                  </div>
+
+                  {appt.patient?.phone && (
+                    <div className="flex items-center gap-1">
+                      <Phone size={16} />
+                      {appt.patient.phone}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium">Reason:</span>{" "}
+                  {appt.reason}
+                </p>
+              </div>
+
+              {/* RIGHT */}
+              <div className="flex flex-col items-end gap-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[appt.status]}`}
+                >
+                  {appt.status}
+                </span>
+
+                {appt.status === "PENDING" && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() =>
+                        updateStatus(appt.id, "CONFIRMED")
+                      }
+                    >
+                      Confirm
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-red-500 hover:bg-red-600 text-white"
+                      onClick={() =>
+                        updateStatus(appt.id, "CANCELLED")
+                      }
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
         ))}
       </div>
     </div>

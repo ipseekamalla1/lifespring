@@ -1,59 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
-  LayoutDashboard,
+  Home,
   Users,
-  CalendarDays,
+  CalendarCheck,
   User,
   LogOut,
+  Stethoscope,
+  FileText,
 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function DoctorSidebar() {
   const router = useRouter();
+  const pathname = usePathname();
 
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "POST" });
     router.push("/login");
   };
 
+  const navItem = (href: string, label: string, Icon: any) => {
+    const active = pathname === href;
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition
+          ${
+            active
+              ? "bg-emerald-100 text-emerald-800 font-semibold"
+              : "text-emerald-700 hover:bg-emerald-50"
+          }`}
+      >
+        <Icon size={18} />
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <aside className="w-64 min-h-screen bg-white border-r flex flex-col justify-between">
+    <aside className="w-64 min-h-screen bg-white border-r border-emerald-100 shadow-sm flex flex-col justify-between">
+      {/* TOP */}
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-center mb-10">
+        <h1 className="text-2xl font-bold text-emerald-800 text-center mb-8">
           Doctor Panel
-        </h2>
+        </h1>
 
-        <nav className="space-y-3">
-          <Link href="/doctor/dashboard" className="sidebar-link">
-            <LayoutDashboard size={18} />
-            Dashboard
-          </Link>
-
-          <Link href="/doctor/patients" className="sidebar-link">
-            <Users size={18} />
-            Patients
-          </Link>
-
-          <Link href="/doctor/appointments" className="sidebar-link">
-            <CalendarDays size={18} />
-            Appointments
-          </Link>
-
-          <Link href="/doctor/profile" className="sidebar-link">
-            <User size={18} />
-            Profile
-          </Link>
+        <nav className="space-y-2">
+          {navItem("/doctor/dashboard", "Dashboard", Home)}
+          {navItem("/doctor/appointments", "Appointments", CalendarCheck)}
+          {navItem("/doctor/patients", "My Patients", Users)}
+          {navItem("/doctor/prescriptions", "Prescriptions", FileText)}
+          {navItem("/doctor/profile", "My Profile", User)}
         </nav>
       </div>
 
+      {/* LOGOUT */}
       <div className="p-6">
         <Button
-          variant="destructive"
-          className="w-full flex gap-2"
-          onClick={logout}
+          onClick={handleLogout}
+          className="w-full bg-red-500 hover:bg-red-600 text-white flex items-center gap-2"
         >
           <LogOut size={18} />
           Logout

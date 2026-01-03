@@ -16,10 +16,7 @@ type Appointment = {
   };
   doctor: {
     name: string | null;
-    department: {
-      id: string;
-      name: string;
-    } | null;
+    department: string | null;
   };
 };
 
@@ -210,7 +207,7 @@ const router = useRouter();
                 <td className="px-4 py-3 text-sm">
                   <div className="font-medium">{appt.doctor?.name || "—"}</div>
                   <div className="text-xs text-gray-500">
-                    {appt.doctor?.department.name || ""}
+                    {appt.doctor?.department || ""}
                   </div>
                 </td>
 
