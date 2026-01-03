@@ -6,7 +6,6 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ✅ UNWRAP PARAMS (REQUIRED IN NEXT 15)
     const { id } = await context.params;
 
     if (!id) {
@@ -19,9 +18,12 @@ export async function GET(
     const doctor = await prisma.doctor.findUnique({
       where: { id },
       include: {
+        department: true, 
         user: true,
         appointments: {
-          include: { patient: true },
+          include: {
+            patient: true,
+          },
           orderBy: { date: "desc" },
         },
       },

@@ -202,8 +202,9 @@ const updateAppointmentStatus = async (
           <h1 className="text-2xl font-semibold text-emerald-800">
             Dr. {doctor.name}
           </h1>
+    
           <p className="text-emerald-700">
-            {doctor.specialization} — {doctor.department}
+             {doctor.department?.name}
           </p>
           <div className="mt-3 flex gap-6 text-sm text-emerald-700">
             <span className="flex items-center gap-1">
