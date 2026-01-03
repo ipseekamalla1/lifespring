@@ -20,10 +20,9 @@ export async function GET() {
   const doctors = await prisma.doctor.findMany({
     include: {
       user: true,
+      department: true,
       appointments: {
-        select: {
-          patientId: true,
-        },
+        select: { patientId: true },
       },
     },
   });
@@ -31,18 +30,15 @@ export async function GET() {
   const formattedDoctors = doctors.map((doc) => ({
     id: doc.id,
     name: doc.name,
-    department: doc.department,
+    department: doc.department?.name ?? "—",
+    departmentId: doc.departmentId,
     specialization: doc.specialization,
     experience: doc.experience,
     email: doc.user.email,
     phone: doc.phone,
-
-    // ✅ correct patient count
     patientsCount: new Set(
       doc.appointments.map((a) => a.patientId)
     ).size,
-
-    // ✅ status comes from DB
     status: doc.status,
   }));
 
@@ -54,10 +50,16 @@ export async function GET() {
 // ----------------------------------
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, email, department, specialization, phone, experience } = body;
+  const {
+    name,
+    email,
+    departmentId,
+    specialization,
+    phone,
+    experience,
+  } = body;
 
-  // VALIDATION
-  if (!name || !email || !department || !specialization || !phone) {
+  if (!name || !email || !departmentId || !specialization || !phone) {
     return NextResponse.json(
       { error: "All fields are required" },
       { status: 400 }
@@ -85,23 +87,19 @@ export async function POST(req: Request) {
     );
   }
 
-  // DUPLICATE EMAIL CHECK
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
   if (existingUser) {
     return NextResponse.json(
-      { error: "A user with this email already exists" },
+      { error: "User already exists" },
       { status: 400 }
     );
   }
 
-  // TEMP PASSWORD
-  const tempPassword = "doctor123";
-  const hashedPassword = await bcrypt.hash(tempPassword, 10);
+  const hashedPassword = await bcrypt.hash("doctor123", 10);
 
-  // CREATE USER + DOCTOR
   const user = await prisma.user.create({
     data: {
       email,
@@ -110,13 +108,13 @@ export async function POST(req: Request) {
       doctor: {
         create: {
           name,
-          department,
           specialization,
           phone,
           experience: Number(experience),
-
-          // ✅ DEFAULT ACTIVE
           status: "ACTIVE",
+          department: {
+            connect: { id: departmentId },
+          },
         },
       },
     },
@@ -127,28 +125,35 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     message: "Doctor created successfully",
-    tempPassword,
+    tempPassword: "doctor123",
     doctor: user.doctor,
   });
 }
 
 // ----------------------------------
-// UPDATE DOCTOR
+// UPDATE DOCTOR (✅ FIXED)
 // ----------------------------------
 export async function PUT(req: Request) {
   const body = await req.json();
-  const { id, name, department, specialization, phone, experience } = body;
+  const {
+    id,
+    name,
+    departmentId,
+    specialization,
+    phone,
+    experience,
+  } = body;
 
-  if (!id || !name || !department || !specialization || !phone) {
+  if (!id || !name || !departmentId || !specialization || !phone) {
     return NextResponse.json(
-      { error: "All fields except email are required" },
+      { error: "All fields are required" },
       { status: 400 }
     );
   }
 
   if (!isValidPhone(phone)) {
     return NextResponse.json(
-      { error: "Phone number must be digits only (7–15 digits)" },
+      { error: "Invalid phone number" },
       { status: 400 }
     );
   }
@@ -164,10 +169,12 @@ export async function PUT(req: Request) {
     where: { id },
     data: {
       name,
-      department,
       specialization,
       phone,
       experience: Number(experience),
+      department: {
+        connect: { id: departmentId },
+      },
     },
   });
 
@@ -185,7 +192,7 @@ export async function DELETE(req: Request) {
 
   if (!id) {
     return NextResponse.json(
-      { error: "Doctor ID is required" },
+      { error: "Doctor ID required" },
       { status: 400 }
     );
   }
@@ -203,10 +210,9 @@ export async function DELETE(req: Request) {
   });
 }
 
-
-// ---------------------------------------------------
-// TOGGLE DOCTOR STATUS
-// ---------------------------------------------------
+// ----------------------------------
+// TOGGLE STATUS
+// ----------------------------------
 export async function PATCH(req: Request) {
   const { id, status } = await req.json();
 
@@ -219,9 +225,7 @@ export async function PATCH(req: Request) {
 
   const doctor = await prisma.doctor.update({
     where: { id },
-    data: {
-      status,
-    },
+    data: { status },
   });
 
   return NextResponse.json({
