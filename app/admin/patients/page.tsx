@@ -18,7 +18,9 @@ type Patient = {
   user: { email: string };
 };
 
-/* ================= EMPTY FORM ================= */
+/* ================= CONSTANTS ================= */
+
+const PAGE_SIZE = 10;
 
 const emptyForm = {
   id: "",
@@ -30,6 +32,32 @@ const emptyForm = {
   phone: "",
 };
 
+/* ================= TOAST ================= */
+
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 3000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div
+      className={`fixed top-6 right-6 z-50 px-4 py-2 rounded text-white shadow
+        ${type === "success" ? "bg-emerald-600" : "bg-red-600"}`}
+    >
+      {message}
+    </div>
+  );
+}
+
 /* ================= COMPONENT ================= */
 
 export default function PatientsPage() {
@@ -38,13 +66,14 @@ export default function PatientsPage() {
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState<any>(emptyForm);
 
-  /* SEARCH + SORT */
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<"name" | "age" | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [toast, setToast] = useState<{ msg: string; type: any } | null>(null);
 
-  /* FILTERS */
+  const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [genderFilter, setGenderFilter] = useState("");
+  const [ageFilter, setAgeFilter] = useState("");
+
+  const [page, setPage] = useState(1);
 
   /* ================= DATA ================= */
 
@@ -58,31 +87,41 @@ export default function PatientsPage() {
     loadPatients();
   }, []);
 
-  /* ================= ACTIONS ================= */
+  /* ================= CRUD ================= */
 
   const handleSubmit = async () => {
-    await fetch("/api/admin/patients", {
+    const res = await fetch("/api/admin/patients", {
       method: isEdit ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
-    setOpen(false);
-    setForm(emptyForm);
-    setIsEdit(false);
-    loadPatients();
+    if (res.ok) {
+      setToast({ msg: isEdit ? "Patient updated" : "Patient created", type: "success" });
+      setOpen(false);
+      setForm(emptyForm);
+      setIsEdit(false);
+      loadPatients();
+    } else {
+      setToast({ msg: "Operation failed", type: "error" });
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this patient?")) return;
 
-    await fetch("/api/admin/patients", {
+    const res = await fetch("/api/admin/patients", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
 
-    loadPatients();
+    if (res.ok) {
+      setToast({ msg: "Patient deleted", type: "success" });
+      loadPatients();
+    } else {
+      setToast({ msg: "Delete failed", type: "error" });
+    }
   };
 
   const openEdit = (p: Patient) => {
@@ -99,54 +138,55 @@ export default function PatientsPage() {
     setOpen(true);
   };
 
-  /* ================= SORT ================= */
+  /* ================= FILTERING ================= */
 
-  const handleSort = (key: "name" | "age") => {
-    if (sortKey === key) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortOrder("asc");
-    }
-  };
+  const filtered = patients.filter((p) => {
+    const q = search.toLowerCase();
 
-  /* ================= FILTERED DATA ================= */
+    const matchesSearch =
+      p.name.toLowerCase().includes(q) ||
+      p.user.email.toLowerCase().includes(q) ||
+      p.phone.includes(q);
 
-  const filteredPatients = patients
-    .filter((p) => {
-      const q = search.toLowerCase();
-      return (
-        p.name.toLowerCase().includes(q) ||
-        p.user.email.toLowerCase().includes(q) ||
-        p.phone.includes(q)
-      );
-    })
-    .sort((a, b) => {
-      if (!sortKey) return 0;
-      const aVal = a[sortKey] ?? "";
-      const bVal = b[sortKey] ?? "";
-      return sortOrder === "asc"
-        ? String(aVal).localeCompare(String(bVal))
-        : String(bVal).localeCompare(String(aVal));
-    });
+    const matchesGender = genderFilter ? p.gender === genderFilter : true;
+
+    const matchesAge =
+      !ageFilter ||
+      (ageFilter === "0-18" && p.age !== null && p.age <= 18) ||
+      (ageFilter === "19-40" && p.age !== null && p.age >= 19 && p.age <= 40) ||
+      (ageFilter === "41-60" && p.age !== null && p.age >= 41 && p.age <= 60) ||
+      (ageFilter === "60+" && p.age !== null && p.age > 60);
+
+    return matchesSearch && matchesGender && matchesAge;
+  });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE
+  );
 
   /* ================= UI ================= */
 
   return (
     <div className="p-6 space-y-6 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
 
+      {toast && (
+        <Toast
+          message={toast.msg}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-emerald-800">Patients</h1>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-          >
+          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
             <Filter size={16} className="mr-2" />
-            {showFilters ? "Hide Filters" : "Show Filters"}
+            Filters
           </Button>
-
           <Button
             className="bg-emerald-600"
             onClick={() => {
@@ -160,43 +200,61 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* SEARCH */}
+      {/* Search */}
       <input
+        className="px-4 py-2 border rounded-lg w-64"
         placeholder="Search patients..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="px-4 py-2 border rounded-lg w-64"
       />
 
-      {/* FILTER PANEL (reserved for future filters) */}
+      {/* Filters */}
       {showFilters && (
-        <Card className="p-4 text-sm text-gray-600">
-          Filters can be added here later (status, gender, age, etc.)
+        <Card className="p-4 flex gap-4">
+          <select
+            className="border p-2 rounded"
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+          >
+            <option value="">All Genders</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+          </select>
+
+          <select
+            className="border p-2 rounded"
+            value={ageFilter}
+            onChange={(e) => setAgeFilter(e.target.value)}
+          >
+            <option value="">All Ages</option>
+            <option value="0-18">0–18</option>
+            <option value="19-40">19–40</option>
+            <option value="41-60">41–60</option>
+            <option value="60+">60+</option>
+          </select>
         </Card>
       )}
 
-      {/* TABLE */}
-      <Card className="rounded-2xl shadow">
-        <CardContent className="p-0 overflow-x-auto">
+      {/* Table */}
+      <Card>
+        <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead className="bg-emerald-600 text-white">
               <tr>
-                <th onClick={() => handleSort("name")} className="p-4 cursor-pointer">Name</th>
+                <th className="p-4">Name</th>
                 <th className="p-4">Email</th>
-                <th onClick={() => handleSort("age")} className="p-4 cursor-pointer">Age</th>
+                <th className="p-4">Age</th>
                 <th className="p-4">Phone</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
-
             <tbody>
-              {filteredPatients.map((p) => (
+              {paginated.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-emerald-50">
                   <td className="p-4">{p.name}</td>
                   <td className="p-4">{p.user.email}</td>
                   <td className="p-4">{p.age ?? "-"}</td>
                   <td className="p-4">{p.phone}</td>
-
                   <td className="p-4 flex justify-center gap-2">
                     <Link href={`/admin/patients/${p.id}`} className="p-2 hover:bg-emerald-100 rounded">
                       <Eye size={16} />
@@ -210,18 +268,91 @@ export default function PatientsPage() {
                   </td>
                 </tr>
               ))}
-
-              {filteredPatients.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center p-6 text-gray-500">
-                    No patients found
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      <div className="flex gap-2">
+        <Button disabled={page === 1} onClick={() => setPage(page - 1)}>Prev</Button>
+        <span className="px-2">Page {page} / {totalPages || 1}</span>
+        <Button disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+      </div>
+
+      {/* Modal */}
+{open && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+
+      {/* Header */}
+      <div className="border-b px-6 py-4">
+        <h2 className="text-lg font-semibold text-gray-800">
+          {isEdit ? "Edit Patient" : "Add New Patient"}
+        </h2>
+        <p className="text-sm text-gray-500">
+          {isEdit
+            ? "Update patient information below"
+            : "Fill in the patient details"}
+        </p>
+      </div>
+
+      {/* Body */}
+      <div className="space-y-4 px-6 py-5">
+        {/* Text Fields */}
+        {["name", "email", "age", "phone", "address"].map((f) => (
+          <div key={f} className="space-y-1">
+            <label className="text-sm font-medium capitalize text-gray-700">
+              {f}
+            </label>
+            <input
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+              placeholder={`Enter ${f}`}
+              value={form[f]}
+              disabled={isEdit && f === "email"}
+              onChange={(e) =>
+                setForm({ ...form, [f]: e.target.value })
+              }
+            />
+          </div>
+        ))}
+
+        {/* Gender */}
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-gray-700">
+            Gender
+          </label>
+          <select
+            className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            value={form.gender}
+            onChange={(e) =>
+              setForm({ ...form, gender: e.target.value })
+            }
+          >
+            <option value="">Select gender</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
+        <Button
+          variant="outline"
+          onClick={() => setOpen(false)}
+        >
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit}>
+          {isEdit ? "Update Patient" : "Create Patient"}
+        </Button>
+      </div>
+
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
