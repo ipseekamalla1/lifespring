@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  CalendarDays,
-  Phone,
-  User,
-} from "lucide-react";
+import { CalendarDays, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Appointment = {
   id: string;
@@ -21,16 +19,27 @@ type Appointment = {
   };
 };
 
-const statusStyles: Record<Appointment["status"], string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-emerald-100 text-emerald-800",
-  CANCELLED: "bg-red-100 text-red-800",
+const statusConfig = {
+  PENDING: {
+    label: "Pending",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  CONFIRMED: {
+    label: "Confirmed",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    className: "bg-rose-50 text-rose-700 border-rose-200",
+  },
 };
 
 export default function DoctorAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const router = useRouter();
+
 
   useEffect(() => {
     fetchAppointments();
@@ -74,112 +83,145 @@ export default function DoctorAppointmentsPage() {
   }, [appointments, search]);
 
   if (loading) {
-    return <div className="p-8 text-emerald-700">Loading appointments…</div>;
+    return (
+      <div className="p-10 text-sm text-gray-500">
+        Loading appointments…
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       {/* HEADER */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-1"
       >
-        <h1 className="text-3xl font-bold text-emerald-900">
-          My Appointments
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Appointments
         </h1>
-        <p className="text-sm text-emerald-700">
-          Manage your scheduled patient appointments
+        <p className="text-sm text-gray-500">
+          Review and manage your patient bookings
         </p>
       </motion.div>
 
       {/* SEARCH */}
-      <div className="bg-white p-4 rounded-2xl border shadow-sm">
+      <div className="bg-white border rounded-lg px-4 py-3">
         <input
-          placeholder="Search patient / phone / reason"
+          placeholder="Search by patient, phone, or reason"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-md border px-3 py-2 text-sm"
+          className="w-full text-sm outline-none placeholder:text-gray-400"
         />
       </div>
 
       {/* LIST */}
-      <div className="space-y-4">
-        {filteredAppointments.length === 0 && (
-          <div className="bg-white p-6 rounded-2xl border shadow-sm text-center text-gray-500">
-            No appointments found
-          </div>
-        )}
+      <div className="space-y-3">
+        <AnimatePresence>
+          {filteredAppointments.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="bg-white border rounded-lg p-8 text-center text-sm text-gray-500"
+            >
+              No appointments found
+            </motion.div>
+          )}
 
-        {filteredAppointments.map((appt, index) => (
-          <motion.div
-            key={appt.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03 }}
-            className="bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition"
-          >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              {/* LEFT */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                  <User size={18} />
-                  {appt.patient?.name || "Unknown Patient"}
-                </div>
+          {filteredAppointments.map((appt) => {
+            const status = statusConfig[appt.status];
 
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <CalendarDays size={16} />
-                    {new Date(appt.date).toLocaleString()}
-                  </div>
-
-                  {appt.patient?.phone && (
-                    <div className="flex items-center gap-1">
-                      <Phone size={16} />
-                      {appt.patient.phone}
+            return (
+              <motion.div
+                key={appt.id}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white border rounded-lg px-6 py-4 hover:bg-gray-50"
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  {/* LEFT */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-medium text-gray-800">
+                      <User size={16} />
+                      {appt.patient?.name || "Unknown Patient"}
                     </div>
-                  )}
-                </div>
 
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium">Reason:</span>{" "}
-                  {appt.reason}
-                </p>
-              </div>
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <CalendarDays size={14} />
+                        {new Date(appt.date).toLocaleString()}
+                      </div>
 
-              {/* RIGHT */}
-              <div className="flex flex-col items-end gap-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[appt.status]}`}
-                >
-                  {appt.status}
-                </span>
+                      {appt.patient?.phone && (
+                        <div className="flex items-center gap-1">
+                          <Phone size={14} />
+                          {appt.patient.phone}
+                        </div>
+                      )}
+                    </div>
 
-                {appt.status === "PENDING" && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                      onClick={() =>
-                        updateStatus(appt.id, "CONFIRMED")
-                      }
-                    >
-                      Confirm
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                      onClick={() =>
-                        updateStatus(appt.id, "CANCELLED")
-                      }
-                    >
-                      Cancel
-                    </Button>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">
+                        Reason:
+                      </span>{" "}
+                      {appt.reason}
+                    </p>
                   </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        ))}
+
+                  {/* RIGHT */}
+                  <div className="flex items-center gap-3">
+<Button
+  size="icon"
+  variant="ghost"
+  className="text-emerald-600 hover:bg-emerald-50"
+  onClick={() =>
+    router.push(`/doctor/appointments/${appt.id}`)
+  }
+>
+  <Eye size={18} />
+</Button>
+
+                    <span
+                      className={`px-3 py-1 text-xs border rounded-full ${status.className}`}
+                    >
+                      {status.label}
+                    </span>
+
+                    {appt.status === "PENDING" && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() =>
+                            updateStatus(appt.id, "CONFIRMED")
+                          }
+                        >
+                          Confirm
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-rose-600 text-rose-700 hover:bg-rose-50"
+                          onClick={() =>
+                            updateStatus(appt.id, "CANCELLED")
+                          }
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     </div>
   );

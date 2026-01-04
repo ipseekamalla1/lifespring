@@ -64,6 +64,8 @@ model Doctor {
 
   user         User         @relation(fields: [userId], references: [id])
   appointments Appointment[]
+  notes         AppointmentNote[]
+  prescriptions Prescription[]
 }
 
 /* =========================
@@ -84,6 +86,8 @@ model Appointment {
   patient Patient @relation(fields: [patientId], references: [id])
   doctor  Doctor  @relation(fields: [doctorId], references: [id])
 
+  notes         AppointmentNote[]
+  prescriptions Prescription[]
   @@index([doctorId])
   @@index([patientId])
   @@index([status])
@@ -116,4 +120,43 @@ model Department {
   updatedAt DateTime @updatedAt
 
   doctors Doctor[]
+}
+/* =========================
+   APPOINTMENT NOTES
+========================= */
+model AppointmentNote {
+  id            String   @id @default(uuid())
+  appointmentId String
+  doctorId      String
+
+  note          String
+  createdAt     DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
+  @@index([appointmentId])
+}
+
+/* =========================
+   PRESCRIPTION
+========================= */
+model Prescription {
+  id            String   @id @default(uuid())
+  appointmentId String
+  doctorId      String
+
+  medication    String
+  dosage        String
+  frequency     String
+  duration      String?
+  instructions  String?
+
+  createdAt DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
+  @@index([appointmentId])
+  @@index([doctorId])
 }
