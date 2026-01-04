@@ -48,6 +48,14 @@ export async function GET(
         doctorId: doctor.id,
       },
       orderBy: { createdAt: "desc" },
+      include: {
+    doctor: {
+      select: {
+        name: true, 
+      },
+    }
+  }
+
     });
 
     return NextResponse.json(notes);
