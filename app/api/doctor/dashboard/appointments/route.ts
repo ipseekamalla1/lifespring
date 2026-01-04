@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
 /* =========================
-   GET DOCTOR STATS
+   GET RECENT APPOINTMENTS
 ========================= */
 export async function GET() {
   try {
@@ -32,34 +32,23 @@ export async function GET() {
       return NextResponse.json({ error: "Not a doctor" }, { status: 403 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const [total, todayCount, pending] = await Promise.all([
-      prisma.appointment.count({
-        where: { doctorId: doctor.id },
-      }),
-      prisma.appointment.count({
-        where: {
-          doctorId: doctor.id,
-          date: { gte: today },
+    const appointments = await prisma.appointment.findMany({
+      where: { doctorId: doctor.id },
+      orderBy: { date: "desc" },
+      take: 5,
+      include: {
+        patient: {
+          select: {
+            name: true,
+            phone: true,
+          },
         },
-      }),
-      prisma.appointment.count({
-        where: {
-          doctorId: doctor.id,
-          status: "PENDING",
-        },
-      }),
-    ]);
-
-    return NextResponse.json({
-      totalAppointments: total,
-      todayAppointments: todayCount,
-      pendingAppointments: pending,
+      },
     });
+
+    return NextResponse.json(appointments);
   } catch (error) {
-    console.error("GET doctor stats error:", error);
+    console.error("GET recent appointments error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 
 /* =========================
-   GET DOCTOR STATS
+   GET RECENT NOTES
 ========================= */
 export async function GET() {
   try {
@@ -32,34 +32,32 @@ export async function GET() {
       return NextResponse.json({ error: "Not a doctor" }, { status: 403 });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const [total, todayCount, pending] = await Promise.all([
-      prisma.appointment.count({
-        where: { doctorId: doctor.id },
-      }),
-      prisma.appointment.count({
-        where: {
-          doctorId: doctor.id,
-          date: { gte: today },
+    const notes = await prisma.appointmentNote.findMany({
+      where: { doctorId: doctor.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: {
+        appointment: {
+          include: {
+            patient: {
+              select: { name: true },
+            },
+          },
         },
-      }),
-      prisma.appointment.count({
-        where: {
-          doctorId: doctor.id,
-          status: "PENDING",
-        },
-      }),
-    ]);
-
-    return NextResponse.json({
-      totalAppointments: total,
-      todayAppointments: todayCount,
-      pendingAppointments: pending,
+      },
     });
+
+    return NextResponse.json(
+      notes.map(n => ({
+        id: n.id,
+        note: n.note,
+        createdAt: n.createdAt,
+        appointmentId: n.appointmentId,
+        patientName: n.appointment.patient?.name ?? "Unknown",
+      }))
+    );
   } catch (error) {
-    console.error("GET doctor stats error:", error);
+    console.error("GET recent notes error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
