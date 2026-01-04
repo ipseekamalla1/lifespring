@@ -93,17 +93,17 @@ export async function POST(
       return NextResponse.json({ error: "Not a doctor" }, { status: 403 });
     }
 
-    const { text } = await req.json();
+     const { note } = await req.json();
 
-    const note = await prisma.appointmentNote.create({
+    const newNote = await prisma.appointmentNote.create({
       data: {
         appointmentId: id,
         doctorId: doctor.id,
-        text,
+        note,
       },
     });
 
-    return NextResponse.json(note);
+    return NextResponse.json(newNote);
   } catch (error) {
     console.error("POST note error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
