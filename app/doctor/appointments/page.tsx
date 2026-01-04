@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { CalendarDays, Phone, User } from "lucide-react";
+import { CalendarDays, Phone, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type Appointment = {
@@ -40,7 +39,6 @@ export default function DoctorAppointmentsPage() {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-
   useEffect(() => {
     fetchAppointments();
   }, []);
@@ -57,25 +55,25 @@ export default function DoctorAppointmentsPage() {
     }
   };
 
-  const updateStatus = async (
-    id: string,
-    status: Appointment["status"]
-  ) => {
-    await fetch("/api/doctor/appointments", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, status }),
-    });
-
-    toast.success("Appointment updated");
-    fetchAppointments();
+  const updateStatus = async (id: string, status: Appointment["status"]) => {
+    try {
+      await fetch("/api/doctor/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      toast.success("Appointment updated");
+      fetchAppointments();
+    } catch {
+      toast.error("Failed to update status");
+    }
   };
 
   const filteredAppointments = useMemo(() => {
     if (!search) return appointments;
     const q = search.toLowerCase();
     return appointments.filter(
-      a =>
+      (a) =>
         a.patient?.name?.toLowerCase().includes(q) ||
         a.patient?.phone?.includes(q) ||
         a.reason.toLowerCase().includes(q)
@@ -84,9 +82,7 @@ export default function DoctorAppointmentsPage() {
 
   if (loading) {
     return (
-      <div className="p-10 text-sm text-gray-500">
-        Loading appointments…
-      </div>
+      <div className="p-10 text-sm text-gray-500">Loading appointments…</div>
     );
   }
 
@@ -108,7 +104,7 @@ export default function DoctorAppointmentsPage() {
       </motion.div>
 
       {/* SEARCH */}
-      <div className="bg-white border rounded-lg px-4 py-3">
+      <div className="bg-white border rounded-lg px-4 py-3 shadow-sm">
         <input
           placeholder="Search by patient, phone, or reason"
           value={search}
@@ -118,13 +114,13 @@ export default function DoctorAppointmentsPage() {
       </div>
 
       {/* LIST */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <AnimatePresence>
           {filteredAppointments.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="bg-white border rounded-lg p-8 text-center text-sm text-gray-500"
+              className="bg-white border rounded-lg p-8 text-center text-sm text-gray-500 shadow-sm"
             >
               No appointments found
             </motion.div>
@@ -135,90 +131,90 @@ export default function DoctorAppointmentsPage() {
 
             return (
               <motion.div
-                key={appt.id}
-                layout
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="bg-white border rounded-lg px-6 py-4 hover:bg-gray-50"
-              >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* LEFT */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 font-medium text-gray-800">
-                      <User size={16} />
-                      {appt.patient?.name || "Unknown Patient"}
-                    </div>
-
-                    <div className="flex flex-wrap gap-4 text-xs text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <CalendarDays size={14} />
-                        {new Date(appt.date).toLocaleString()}
-                      </div>
-
-                      {appt.patient?.phone && (
-                        <div className="flex items-center gap-1">
-                          <Phone size={14} />
-                          {appt.patient.phone}
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium text-gray-700">
-                        Reason:
-                      </span>{" "}
-                      {appt.reason}
-                    </p>
-                  </div>
-
-                  {/* RIGHT */}
-                  <div className="flex items-center gap-3">
-<Button
-  size="icon"
-  variant="ghost"
-  className="text-emerald-600 hover:bg-emerald-50"
-  onClick={() =>
-    router.push(`/doctor/appointments/${appt.id}`)
-  }
+  key={appt.id}
+  layout
+  initial={{ opacity: 0, y: 6 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.2 }}
+  className="bg-white border rounded-lg px-6 py-4 hover:bg-gray-50"
 >
-  <Eye size={18} />
-</Button>
+  {/* TOP ROW: Patient Info */}
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    {/* LEFT: Patient Info */}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 font-medium text-gray-800">
+        <User size={16} />
+        {appt.patient?.name || "Unknown Patient"}
+      </div>
 
-                    <span
-                      className={`px-3 py-1 text-xs border rounded-full ${status.className}`}
-                    >
-                      {status.label}
-                    </span>
+      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+        <div className="flex items-center gap-1">
+          <CalendarDays size={14} />
+          {new Date(appt.date).toLocaleString()}
+        </div>
 
-                    {appt.status === "PENDING" && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                          onClick={() =>
-                            updateStatus(appt.id, "CONFIRMED")
-                          }
-                        >
-                          Confirm
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-rose-600 text-rose-700 hover:bg-rose-50"
-                          onClick={() =>
-                            updateStatus(appt.id, "CANCELLED")
-                          }
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
+        {appt.patient?.phone && (
+          <div className="flex items-center gap-1">
+            <Phone size={14} />
+            {appt.patient.phone}
+          </div>
+        )}
+      </div>
+
+      <p className="text-sm text-gray-600">
+        <span className="font-medium text-gray-700">Reason:</span>{" "}
+        {appt.reason}
+      </p>
+    </div>
+
+    {/* RIGHT: Status + Pending Buttons */}
+    <div className="flex items-center gap-3 md:gap-4">
+      {/* Status Badge */}
+      <span
+        className={`px-3 py-1 text-xs border rounded-full font-medium ${status.className}`}
+      >
+        {status.label}
+      </span>
+
+      {/* Pending Actions */}
+      {appt.status === "PENDING" && (
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+            onClick={() => updateStatus(appt.id, "CONFIRMED")}
+          >
+            Confirm
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-rose-600 text-rose-700 hover:bg-rose-50"
+            onClick={() => updateStatus(appt.id, "CANCELLED")}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* BOTTOM ROW: View Button */}
+  <div className="mt-4 flex justify-end">
+    <Button
+      size="sm"
+      variant="outline"
+      className="flex items-center gap-1 border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+      onClick={() => router.push(`/doctor/appointments/${appt.id}`)}
+    >
+      <Eye size={16} />
+      View
+    </Button>
+  </div>
+</motion.div>
+
             );
           })}
         </AnimatePresence>

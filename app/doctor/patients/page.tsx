@@ -3,12 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import {
-  User,
-  Phone,
-  CalendarDays,
-  Stethoscope,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Phone, CalendarDays, Stethoscope, Eye } from "lucide-react";
 
 type Patient = {
   id: string;
@@ -25,6 +21,7 @@ export default function DoctorPatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     fetchPatients();
@@ -98,7 +95,7 @@ export default function DoctorPatientsPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.04 }}
-              className="bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition"
+              className="bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md transition relative"
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 {/* LEFT */}
@@ -137,6 +134,16 @@ export default function DoctorPatientsPage() {
                   <Stethoscope size={16} />
                   Under your care
                 </div>
+              </div>
+
+              {/* VIEW BUTTON */}
+              <div className="absolute bottom-4 right-4">
+                <button
+                  onClick={() => router.push(`/doctor/patients/${patient.id}`)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition"
+                >
+                  <Eye size={16} /> View
+                </button>
               </div>
             </motion.div>
           );

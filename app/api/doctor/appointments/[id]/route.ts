@@ -82,3 +82,43 @@ export async function GET(
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
+
+
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  const { id } = params;
+  const body = await req.json();
+  const { status } = body;
+
+  if (!["PENDING", "CONFIRMED", "CANCELLED"].includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
+
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value;
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: string };
+    if (decoded.role !== "DOCTOR") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const doctor = await prisma.doctor.findUnique({ where: { userId: decoded.id } });
+    if (!doctor) return NextResponse.json({ error: "Not a doctor" }, { status: 403 });
+
+    const appointment = await prisma.appointment.findUnique({ where: { id } });
+    if (!appointment || appointment.doctorId !== doctor.id) {
+      return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
+    }
+
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: { status },
+    });
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+

@@ -1,0 +1,182 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Phone, Mail, User, Eye, Stethoscope } from "lucide-react";
+import { toast } from "sonner";
+
+type Appointment = {
+  id: string;
+  date: string;
+  reason: string;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  doctor: {
+    name: string;
+    specialization: string;
+    department: string;
+    phone: string | null;
+  };
+};
+
+export default function DoctorPatientProfilePage() {
+  const { id } = useParams();
+  const router = useRouter();
+
+  const [patient, setPatient] = useState<any>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/doctor/patients/${id}`)
+      .then(res => res.json())
+      .then(setPatient)
+      .catch(() => toast.error("Failed to load patient"));
+  }, [id]);
+
+  if (!patient) {
+    return <div className="p-10 text-emerald-700">Loading patient profile…</div>;
+  }
+
+  const updateAppointmentStatus = async (appointmentId: string, status: string) => {
+    try {
+      setUpdatingId(appointmentId);
+
+      const res = await fetch(`/api/doctor/appointments/${appointmentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!res.ok) throw new Error("Failed");
+
+      const updated = await res.json();
+
+      setPatient((prev: any) => ({
+        ...prev,
+        appointments: prev.appointments.map((a: Appointment) =>
+          a.id === updated.id ? { ...a, status: updated.status } : a
+        ),
+      }));
+
+      toast.success("Appointment updated");
+    } catch {
+      toast.error("Failed to update status");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const statusClass = (status: string) =>
+    status === "CONFIRMED"
+      ? "bg-green-100 text-green-700"
+      : status === "CANCELLED"
+      ? "bg-red-100 text-red-700"
+      : "bg-yellow-100 text-yellow-700";
+
+  return (
+    <div className="p-8 space-y-8 bg-gradient-to-br from-emerald-50 to-white min-h-screen">
+      {/* ================= PATIENT PROFILE CARD ================= */}
+      <Card className="rounded-3xl shadow-xl">
+        <CardContent className="p-8 grid md:grid-cols-3 gap-6">
+          {/* LEFT */}
+          <div className="flex flex-col items-center justify-center text-center">
+            <div className="h-24 w-24 rounded-full bg-emerald-100 flex items-center justify-center">
+              <User size={40} className="text-emerald-700" />
+            </div>
+            <h2 className="text-2xl font-bold mt-4">{patient.name}</h2>
+            <Badge className="mt-2 bg-emerald-600">Patient</Badge>
+          </div>
+
+          {/* MIDDLE */}
+          <div className="space-y-3">
+            <p className="flex items-center gap-2">
+              <Mail size={16} /> {patient.user.email}
+            </p>
+            <p className="flex items-center gap-2">
+              <Phone size={16} /> {patient.phone}
+            </p>
+            <p>Age: {patient.age ?? "-"}</p>
+            <p>Gender: {patient.gender ?? "-"}</p>
+          </div>
+
+          {/* RIGHT */}
+          <div>
+            <p className="font-medium">Address</p>
+            <p className="text-gray-600">{patient.address ?? "-"}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ================= APPOINTMENTS ================= */}
+      <div className="space-y-4">
+        <h3 className="text-2xl font-bold">Appointments</h3>
+
+        <Card className="rounded-2xl shadow">
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-emerald-100">
+                <tr>
+                  <th className="p-4 text-left">Date</th>
+                  <th className="p-4 text-left">Reason</th>
+                  <th className="p-4 text-left">Doctor</th>
+                  <th className="p-4 text-left">Department</th>
+                  <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-center">View</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {patient.appointments?.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-gray-500">
+                      No appointments found
+                    </td>
+                  </tr>
+                )}
+
+                {patient.appointments?.map((a: Appointment) => (
+                  <tr key={a.id} className="border-t hover:bg-emerald-50 transition">
+                    <td className="p-4">{new Date(a.date).toLocaleDateString()}</td>
+                    <td className="p-4">{a.reason}</td>
+                    <td className="p-4">
+                      <p className="font-medium">{a.doctor.name}</p>
+                      {a.doctor.phone && (
+                        <p className="text-xs text-gray-500">📞 {a.doctor.phone}</p>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <p className="text-gray-700">{a.doctor.department}</p>
+                      <p className="text-xs text-gray-500">{a.doctor.specialization}</p>
+                    </td>
+                    <td className="p-4 text-center">
+                      <select
+                        value={a.status}
+                        disabled={updatingId === a.id}
+                        onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusClass(a.status)}`}
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="CONFIRMED">CONFIRMED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                      </select>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        className="p-2 rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition"
+                        onClick={() => router.push(`/doctor/appointments/${a.id}`)}
+                        title="View Appointment"
+                      >
+                        <Eye size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
