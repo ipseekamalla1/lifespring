@@ -9,6 +9,7 @@ export default function DoctorProfile() {
   const [doctor, setDoctor] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
 
   const [form, setForm] = useState({
     name: "",
@@ -42,6 +43,9 @@ export default function DoctorProfile() {
   }, []);
 
   const saveProfile = async () => {
+    setError(null);
+    setSuccess(null);
+
     const res = await fetch("/api/doctor/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -74,85 +78,196 @@ export default function DoctorProfile() {
     if (!res.ok) return setError(data.error);
 
     setSuccess("Password changed successfully");
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p className="p-6 text-gray-500">Loading profile…</p>;
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <h1 className="text-2xl font-bold">Doctor Profile</h1>
+    <div className="max-w-4xl p-6 space-y-6">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold text-emerald-900">Doctor Profile</h1>
+        <p className="text-sm text-emerald-700">
+          Manage your personal information and security
+        </p>
+      </div>
 
-          {error && <p className="text-red-500">{error}</p>}
-          {success && <p className="text-green-600">{success}</p>}
+      {/* TABS */}
+      <div className="flex gap-4 border-b">
+        <button
+          onClick={() => setActiveTab("profile")}
+          className={`pb-2 font-medium ${
+            activeTab === "profile"
+              ? "border-b-2 border-emerald-600 text-emerald-700"
+              : "text-gray-500"
+          }`}
+        >
+          Profile Info
+        </button>
 
-          <div>
-            <label>Name</label>
-            {editing ? (
-              <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-            ) : (
-              <p>{doctor.name}</p>
-            )}
-          </div>
+        <button
+          onClick={() => setActiveTab("security")}
+          className={`pb-2 font-medium ${
+            activeTab === "security"
+              ? "border-b-2 border-emerald-600 text-emerald-700"
+              : "text-gray-500"
+          }`}
+        >
+          Security
+        </button>
+      </div>
 
-          <div>
-            <label>Email</label>
-            <p>{doctor.email}</p>
-          </div>
+      {/* ALERTS */}
+      {error && <p className="text-red-500">{error}</p>}
+      {success && <p className="text-green-600">{success}</p>}
 
-          <div>
-            <label>Phone</label>
-            {editing ? (
-              <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-            ) : (
-              <p>{doctor.phone}</p>
-            )}
-          </div>
+      {/* ================= PROFILE TAB ================= */}
+      {activeTab === "profile" && (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-6 space-y-5">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Full Name</label>
+                {editing ? (
+                  <Input
+                    value={form.name}
+                    onChange={e =>
+                      setForm({ ...form, name: e.target.value })
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-800">{doctor.name}</p>
+                )}
+              </div>
 
-          <div className="flex gap-2">
-            {editing ? (
-              <>
-                <Button onClick={saveProfile}>Save</Button>
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
-              </>
-            ) : (
-              <Button onClick={() => setEditing(true)}>Edit Profile</Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <p className="mt-1 text-gray-800">{doctor.email}</p>
+              </div>
 
-      {/* CHANGE PASSWORD */}
-      <Card>
-        <CardContent className="p-6 space-y-3">
-          <h2 className="text-xl font-bold">Change Password</h2>
+              <div>
+                <label className="text-sm font-medium">Phone</label>
+                {editing ? (
+                  <Input
+                    value={form.phone}
+                    onChange={e =>
+                      setForm({ ...form, phone: e.target.value })
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-800">
+                    {doctor.phone || "-"}
+                  </p>
+                )}
+              </div>
 
-          <Input
-            type="password"
-            placeholder="Current Password"
-            value={passwordForm.currentPassword}
-            onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-          />
+              <div>
+                <label className="text-sm font-medium">Department</label>
+                {editing ? (
+                  <Input
+                    value={form.department}
+                    onChange={e =>
+                      setForm({ ...form, department: e.target.value })
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-800">
+                    {doctor.department || "-"}
+                  </p>
+                )}
+              </div>
 
-          <Input
-            type="password"
-            placeholder="New Password"
-            value={passwordForm.newPassword}
-            onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-          />
+              <div>
+                <label className="text-sm font-medium">Specialization</label>
+                {editing ? (
+                  <Input
+                    value={form.specialization}
+                    onChange={e =>
+                      setForm({ ...form, specialization: e.target.value })
+                    }
+                  />
+                ) : (
+                  <p className="mt-1 text-gray-800">
+                    {doctor.specialization || "-"}
+                  </p>
+                )}
+              </div>
+            </div>
 
-          <Input
-            type="password"
-            placeholder="Confirm New Password"
-            value={passwordForm.confirmPassword}
-            onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-          />
+            <div className="flex gap-3 pt-4">
+              {editing ? (
+                <>
+                  <Button onClick={saveProfile}>Save Changes</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditing(false)}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button  className="bg-emerald-700" onClick={() => setEditing(true)}>
+                  Edit Profile
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          <Button onClick={changePassword}>Update Password</Button>
-        </CardContent>
-      </Card>
+      {/* ================= SECURITY TAB ================= */}
+      {activeTab === "security" && (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-6 space-y-4 max-w-md">
+            <h2 className="text-xl font-semibold">Change Password</h2>
+
+            <Input
+              type="password"
+              placeholder="Current Password"
+              value={passwordForm.currentPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  currentPassword: e.target.value,
+                })
+              }
+            />
+
+            <Input
+              type="password"
+              placeholder="New Password"
+              value={passwordForm.newPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  newPassword: e.target.value,
+                })
+              }
+            />
+
+            <Input
+              type="password"
+              placeholder="Confirm New Password"
+              value={passwordForm.confirmPassword}
+              onChange={e =>
+                setPasswordForm({
+                  ...passwordForm,
+                  confirmPassword: e.target.value,
+                })
+              }
+            />
+
+            <Button className="bg-emerald-700" onClick={changePassword}>
+              Update Password
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

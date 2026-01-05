@@ -30,7 +30,11 @@ export async function GET() {
         doctor: {
           select: {
             name: true,
-            department: true,
+            department: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },

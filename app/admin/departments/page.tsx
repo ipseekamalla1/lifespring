@@ -6,41 +6,58 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+/* ================= TYPES ================= */
+
 type Department = {
   id: string;
   name: string;
 };
 
+/* ================= COMPONENT ================= */
+
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [filtered, setFiltered] = useState<Department[]>([]);
   const [search, setSearch] = useState("");
+
+  // Modal + form
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [name, setName] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Pagination
   const [page, setPage] = useState(1);
   const perPage = 10;
 
+  /* ================= FETCH ================= */
+
   const fetchDepartments = async () => {
-    const res = await fetch("/api/admin/departments");
-    const data = await res.json();
-    setDepartments(data);
-    setFiltered(data);
+    try {
+      const res = await fetch("/api/admin/departments");
+      const data = await res.json();
+      setDepartments(data);
+      setFiltered(data);
+    } catch {
+      toast.error("Failed to load departments");
+    }
   };
 
   useEffect(() => {
     fetchDepartments();
   }, []);
 
+  /* ================= SEARCH ================= */
+
   useEffect(() => {
-    const f = departments.filter((d) =>
+    const f = departments.filter(d =>
       d.name.toLowerCase().includes(search.toLowerCase())
     );
     setFiltered(f);
     setPage(1);
   }, [search, departments]);
+
+  /* ================= SAVE ================= */
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -51,7 +68,9 @@ export default function DepartmentsPage() {
     const res = await fetch("/api/admin/departments", {
       method: isEdit ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(isEdit ? { id: selectedId, name } : { name }),
+      body: JSON.stringify(
+        isEdit ? { id: selectedId, name } : { name }
+      ),
     });
 
     const data = await res.json();
@@ -68,6 +87,8 @@ export default function DepartmentsPage() {
     setSelectedId(null);
     fetchDepartments();
   };
+
+  /* ================= DELETE ================= */
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this department?")) return;
@@ -89,9 +110,13 @@ export default function DepartmentsPage() {
     fetchDepartments();
   };
 
+  /* ================= PAGINATION ================= */
+
   const start = (page - 1) * perPage;
   const paginated = filtered.slice(start, start + perPage);
   const totalPages = Math.ceil(filtered.length / perPage);
+
+  /* ================= UI ================= */
 
   return (
     <Card className="border-green-100">
@@ -102,7 +127,16 @@ export default function DepartmentsPage() {
           <h1 className="text-xl font-semibold text-green-800">
             Departments
           </h1>
-          <Button className="bg-green-600 hover:bg-green-700">
+
+          <Button
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => {
+              setOpen(true);
+              setIsEdit(false);
+              setName("");
+              setSelectedId(null);
+            }}
+          >
             <Plus size={18} className="mr-2" />
             Add Department
           </Button>
@@ -146,11 +180,22 @@ export default function DepartmentsPage() {
                   <td className="px-4 py-3 font-medium">
                     {d.name}
                   </td>
+
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button size="icon" variant="outline">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => {
+                          setOpen(true);
+                          setIsEdit(true);
+                          setName(d.name);
+                          setSelectedId(d.id);
+                        }}
+                      >
                         <Pencil size={16} />
                       </Button>
+
                       <Button
                         size="icon"
                         variant="destructive"
@@ -169,13 +214,23 @@ export default function DepartmentsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-end gap-2">
-            <Button variant="outline" disabled={page === 1}>
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+            >
               Previous
             </Button>
+
             <span className="flex items-center text-sm text-green-700">
               Page {page} of {totalPages}
             </span>
-            <Button variant="outline" disabled={page === totalPages}>
+
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
               Next
             </Button>
           </div>
