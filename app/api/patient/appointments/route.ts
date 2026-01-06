@@ -57,14 +57,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Patient not found" }, { status: 401 });
   }
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      patientId: patient.id, // ✅ CORRECT
-      doctorId: body.doctorId,
-      date: new Date(body.date),
-      reason: body.reason,
-    },
-  });
+  const appointmentDate = new Date(body.date);
 
-  return NextResponse.json(appointment);
+  try {
+    const appointment = await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: body.doctorId,
+        date: appointmentDate,
+        reason: body.reason,
+      },
+    });
+
+    return NextResponse.json(appointment);
+  } catch (error: any) {
+    // 🚨 SLOT ALREADY TAKEN
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "This time slot is already booked" },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to book appointment" },
+      { status: 500 }
+    );
+  }
 }
+

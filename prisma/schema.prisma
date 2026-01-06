@@ -91,6 +91,7 @@ model Appointment {
   @@index([doctorId])
   @@index([patientId])
   @@index([status])
+  
 }
 
 /* =========================

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import BookAppointmentModal from "@/components/patient/BookAppointmentModal";
+
 
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
@@ -85,14 +87,29 @@ export default function PatientAppointmentsPage() {
   return (
     <div className="p-8 space-y-10">
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-emerald-800">
-          My Appointments
-        </h1>
-        <p className="text-gray-600 mt-1">
-          View your upcoming and past medical appointments
-        </p>
-      </div>
+<div className="flex justify-between items-center">
+  <div>
+    <h1 className="text-3xl font-bold text-emerald-800">
+      My Appointments
+    </h1>
+    <p className="text-gray-600 mt-1">
+      View your upcoming and past medical appointments
+    </p>
+  </div>
+
+  <BookAppointmentModal
+    onSuccess={() => {
+      setLoading(true);
+      fetch("/api/patient/appointments", {
+        credentials: "include",
+      })
+        .then((res) => res.json())
+        .then((data) => setAppointments(data))
+        .finally(() => setLoading(false));
+    }}
+  />
+</div>
+
 
       {/* UPCOMING */}
       <section>
