@@ -9,13 +9,18 @@ export async function GET() {
         id: true,
         name: true,
         specialization: true,
-        department: true,
+        department: {select:{name:true}},
         experience: true,
         phone: true,
       },
     });
 
-    return NextResponse.json(doctors);
+    return NextResponse.json(
+      doctors.map((d) => ({
+        ...d,
+        department: d.department?.name || null, 
+      }))
+    );
   } catch {
     return NextResponse.json(
       { message: "Failed to fetch doctors" },

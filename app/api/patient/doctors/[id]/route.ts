@@ -2,11 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params; // ✅ FIX HERE
+    // ✅ MUST await params
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json(
+        { message: "Doctor ID missing" },
+        { status: 400 }
+      );
+    }
 
     const doctor = await prisma.doctor.findUnique({
       where: { id },
@@ -14,9 +22,11 @@ export async function GET(
         id: true,
         name: true,
         specialization: true,
-        department: true,
         experience: true,
         phone: true,
+        department: {
+          select: { name: true },
+        },
       },
     });
 
@@ -27,11 +37,14 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(doctor);
+    return NextResponse.json({
+      ...doctor,
+      department: doctor.department?.name ?? null,
+    });
   } catch (error) {
-    console.error(error);
+    console.error("Doctor fetch error:", error);
     return NextResponse.json(
-      { message: "Failed to fetch doctor details" },
+      { message: "Failed to fetch doctor" },
       { status: 500 }
     );
   }
