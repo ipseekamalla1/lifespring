@@ -1,100 +1,184 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import BookAppointment from "./BookAppointment";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-interface Appointment {
+
+type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
+
+type Appointment = {
   id: string;
   date: string;
   reason: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  status: AppointmentStatus;
   doctor: {
-    name: string;
-    specialization: string;
+    name: string | null;
+    specialization: string | null;
+    department: {
+      name: string;
+    } | null;
   };
-}
+};
+
+const statusStyle: Record<AppointmentStatus, string> = {
+  CONFIRMED: "bg-emerald-100 text-emerald-800",
+  PENDING: "bg-yellow-100 text-yellow-800",
+  CANCELLED: "bg-red-100 text-red-800",
+};
 
 export default function PatientAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-
-  const fetchAppointments = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/patient/appointments", {
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      setAppointments(Array.isArray(data) ? data : []);
-    } catch {
-      setAppointments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        const res = await fetch("/api/patient/appointments", {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch appointments");
+        }
+
+        const data = await res.json();
+        setAppointments(data);
+      } catch (err) {
+        setError("Unable to load appointments");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchAppointments();
   }, []);
 
-  const cancelAppointment = async (id: string) => {
-    setCancellingId(id);
+  const now = new Date();
 
-    await fetch(`/api/patient/appointments/${id}`, {
-      method: "PATCH",
-      credentials: "include",
-    });
+  const upcoming = appointments.filter(
+    (a) => new Date(a.date) >= now
+  );
 
-    setCancellingId(null);
-    fetchAppointments();
-  };
+  const past = appointments.filter(
+    (a) => new Date(a.date) < now
+  );
 
-  const statusColor = (status: string) => {
-    if (status === "PENDING") return "bg-yellow-100 text-yellow-700";
-    if (status === "CONFIRMED") return "bg-green-100 text-green-700";
-    return "bg-gray-200 text-gray-600";
-  };
+  if (loading) {
+    return (
+      <div className="p-8 text-muted-foreground">
+        Loading appointments...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">My Appointments</h1>
+    <div className="p-8 space-y-10">
+      {/* HEADER */}
+      <div>
+        <h1 className="text-3xl font-bold text-emerald-800">
+          My Appointments
+        </h1>
+        <p className="text-gray-600 mt-1">
+          View your upcoming and past medical appointments
+        </p>
+      </div>
 
-      {loading && <p>Loading...</p>}
+      {/* UPCOMING */}
+      <section>
+        <h2 className="text-xl font-semibold text-emerald-700 mb-4">
+          Upcoming Appointments
+        </h2>
 
-      {!loading && appointments.length === 0 && (
-        <p>No appointments found</p>
-      )}
+        {upcoming.length === 0 && (
+          <p className="text-muted-foreground">
+            No upcoming appointments.
+          </p>
+        )}
 
-      {appointments.map((a) => (
-        <div key={a.id} className="border p-4 mb-3 rounded">
-          <p><b>Doctor:</b> {a.doctor.name}</p>
-          <p><b>Specialization:</b> {a.doctor.specialization}</p>
-          <p><b>Date:</b> {new Date(a.date).toLocaleString()}</p>
-          <p><b>Reason:</b> {a.reason}</p>
-
-          <span
-            className={`inline-block mt-1 px-2 py-1 rounded text-sm ${statusColor(
-              a.status
-            )}`}
-          >
-            {a.status}
-          </span>
-
-          {a.status !== "CANCELLED" && (
-            <button
-              disabled={cancellingId === a.id}
-              className="mt-3 bg-red-500 text-white px-3 py-1 rounded disabled:opacity-50"
-              onClick={() => cancelAppointment(a.id)}
+        <div className="grid gap-4">
+          {upcoming.map((a) => (
+            <div
+              key={a.id}
+              className="rounded-xl border bg-white p-6 shadow-sm flex justify-between items-center"
             >
-              {cancellingId === a.id ? "Cancelling..." : "Cancel"}
-            </button>
-          )}
-        </div>
-      ))}
+              <div className="space-y-1">
+                <p className="text-lg font-semibold text-emerald-800">
+                  {a.doctor.name ?? "Doctor"}
+                </p>
 
-      <BookAppointment onBooked={fetchAppointments} />
+                <p className="text-sm text-gray-600">
+                  {a.doctor.specialization ?? "General"}{" "}
+                  {a.doctor.department?.name
+                    ? `• ${a.doctor.department.name}`
+                    : ""}
+                </p>
+
+                <p className="text-sm">
+                  📅 {new Date(a.date).toLocaleString()}
+                </p>
+
+                <p className="text-sm">
+                  <span className="font-medium">Reason:</span>{" "}
+                  {a.reason}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-end gap-3">
+                <Badge className={statusStyle[a.status]}>
+                  {a.status}
+                </Badge>
+
+                <Link href={`/patient/appointments/${a.id}`}>
+  <Button variant="outline" size="sm">
+    View Details
+  </Button>
+</Link>
+
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* HISTORY */}
+      <section>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">
+          Appointment History
+        </h2>
+
+        <div className="space-y-3">
+          {past.map((a) => (
+            <div
+              key={a.id}
+              className="rounded-lg border bg-gray-50 p-4 flex justify-between items-center"
+            >
+              <div>
+                <p className="font-medium">
+                  {a.doctor.name ?? "Doctor"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {new Date(a.date).toLocaleDateString()} — {a.reason}
+                </p>
+              </div>
+
+              <Badge className={statusStyle[a.status]}>
+                {a.status}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

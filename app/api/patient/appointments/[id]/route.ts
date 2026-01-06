@@ -1,14 +1,14 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import {prisma }from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function PATCH(
+export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  // ✅ unwrap params FIRST
   const { id } = await context.params;
+
 
   if (!id) {
     return NextResponse.json(
@@ -17,42 +17,72 @@ export async function PATCH(
     );
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("session")?.value;
+  try {
+    // 🔐 AUTH
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value;
 
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded: any = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    );
 
-  const patient = await prisma.patient.findUnique({
-    where: { userId: decoded.id },
-  });
+    // ✅ FIND PATIENT
+    const patient = await prisma.patient.findUnique({
+      where: { userId: decoded.id },
+    });
 
-  if (!patient) {
-    return NextResponse.json({ error: "Patient not found" }, { status: 401 });
-  }
+    if (!patient) {
+      return NextResponse.json(
+        { error: "Patient not found" },
+        { status: 401 }
+      );
+    }
 
-  const appointment = await prisma.appointment.findUnique({
-    where: { id }, // ✅ NOW VALID
-  });
+    // 🔒 FETCH APPOINTMENT (OWNERSHIP CHECK)
+    const appointment = await prisma.appointment.findFirst({
+      where: {
+        id,
+        patientId: patient.id,
+      },
+      include: {
+        doctor: {
+          select: {
+            name: true,
+            specialization: true,
+            department: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        notes: {
+          orderBy: { createdAt: "desc" },
+        },
+        prescriptions: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
 
-  if (!appointment || appointment.patientId !== patient.id) {
-    return NextResponse.json({ error: "Not allowed" }, { status: 403 });
-  }
+    if (!appointment) {
+      return NextResponse.json(
+        { error: "Appointment not found" },
+        { status: 404 }
+      );
+    }
 
-  if (appointment.status === "CANCELLED") {
+    return NextResponse.json(appointment);
+  } catch (error) {
+    console.error("APPOINTMENT_DETAILS_ERROR:", error);
     return NextResponse.json(
-      { error: "Already cancelled" },
-      { status: 400 }
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
-
-  const updated = await prisma.appointment.update({
-    where: { id },
-    data: { status: "CANCELLED" },
-  });
-
-  return NextResponse.json(updated);
 }
