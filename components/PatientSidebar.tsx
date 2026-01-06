@@ -52,7 +52,6 @@ export default function PatientSidebar() {
           {navItem("/patient/dashboard", "Dashboard", Home)}
           {navItem("/patient/appointments", "Appointments", CalendarCheck)}
           {navItem("/patient/doctors", "Doctors", Stethoscope)}
-          {navItem("/patient/prescriptions", "Prescriptions", FileText)}
           {navItem("/patient/profile", "My Profile", User)}
         </nav>
       </div>
