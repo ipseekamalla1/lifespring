@@ -95,7 +95,7 @@ export default function DoctorsPage() {
               {/* ACTION */}
               <Button
                 size="sm"
-                className="w-full mt-2"
+                className="w-full mt-2 bg-emerald-700"
                 onClick={() => router.push(`/patient/doctors/${doc.id}`)}
               >
                 View Profile

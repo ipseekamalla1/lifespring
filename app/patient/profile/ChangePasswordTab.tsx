@@ -116,7 +116,7 @@ export default function ChangePasswordTab() {
         )}
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={loading} className="w-ful bg-emerald-700">
         {loading ? "Updating..." : "Update Password"}
       </Button>
     </form>

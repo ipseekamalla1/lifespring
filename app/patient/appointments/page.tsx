@@ -157,7 +157,7 @@ export default function PatientAppointmentsPage() {
                 </Badge>
 
                 <Link href={`/patient/appointments/${a.id}`}>
-  <Button variant="outline" size="sm">
+  <Button variant="outline" size="sm" className="bg-emerald-700 text-white">
     View Details
   </Button>
 </Link>
