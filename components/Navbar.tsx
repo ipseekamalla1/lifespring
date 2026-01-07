@@ -4,10 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function Navbar({ user }: { user?: any }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,38 +19,61 @@ export default function Navbar({ user }: { user?: any }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Doctors", href: "/doctors" },
+    { name: "About", href: "/about" },
+    { name: "Contact", href: "/contact" },
+  ];
+
   return (
     <nav
       className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white shadow-md" : "bg-white/90"
+        scrolled
+          ? "bg-white shadow-md"
+          : "bg-white/90 backdrop-blur"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        
+      <div
+        className={`max-w-7xl mx-auto px-4 flex items-center justify-between transition-all duration-300 ${
+          scrolled ? "py-2" : "py-3"
+        }`}
+      >
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center">
           <Image
-            src="/images/logo_1.png"   // 👉 put your logo in /public/logo.png
+            src="/images/logo_1_trans.png"
             alt="HealthCare Logo"
-            width={150}
-            height={36}
+            width={260}
+            height={40}
             priority
+            className="h-30 w-40"
           />
-        
         </Link>
 
-        {/* Desktop Menu */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          {["Home", "Doctors", "About", "Contact"].map((item) => (
-            <Link
-              key={item}
-              href={item === "Home" ? "/" : `/${item.toLowerCase()}`}
-              className="relative group text-gray-700"
-            >
-              {item}
-              <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-[#4ca626] transition-all duration-300 group-hover:w-full"></span>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`relative group transition-colors ${
+                  isActive
+                    ? "text-[#4ca626]"
+                    : "text-gray-700 hover:text-[#4ca626]"
+                }`}
+              >
+                {item.name}
+                <span
+                  className={`absolute left-0 -bottom-1 h-[2px] bg-[#4ca626] transition-all duration-300 ${
+                    isActive ? "w-full" : "w-0 group-hover:w-full"
+                  }`}
+                />
+              </Link>
+            );
+          })}
 
           {!user ? (
             <Link
@@ -61,10 +86,20 @@ export default function Navbar({ user }: { user?: any }) {
             <>
               <Link
                 href="/appointments"
-                className="relative group text-gray-700"
+                className={`relative group transition-colors ${
+                  pathname === "/appointments"
+                    ? "text-[#4ca626]"
+                    : "text-gray-700 hover:text-[#4ca626]"
+                }`}
               >
                 My Appointments
-                <span className="absolute left-0 -bottom-1 h-[2px] w-0 bg-[#4ca626] transition-all duration-300 group-hover:w-full"></span>
+                <span
+                  className={`absolute left-0 -bottom-1 h-[2px] bg-[#4ca626] transition-all duration-300 ${
+                    pathname === "/appointments"
+                      ? "w-full"
+                      : "w-0 group-hover:w-full"
+                  }`}
+                />
               </Link>
               <button className="text-red-500 hover:underline">
                 Logout
@@ -73,32 +108,43 @@ export default function Navbar({ user }: { user?: any }) {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Toggle */}
         <button
           className="md:hidden text-[#4ca626]"
           onClick={() => setOpen(!open)}
+          aria-label="Toggle menu"
         >
           {open ? <X size={28} /> : <Menu size={28} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Navigation */}
       <div
         className={`md:hidden overflow-hidden transition-all duration-300 ${
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
         <div className="bg-white border-t px-6 py-6 flex flex-col gap-5 text-sm font-medium">
-          <Link href="/" onClick={() => setOpen(false)}>Home</Link>
-          <Link href="/doctors" onClick={() => setOpen(false)}>Doctors</Link>
-          <Link href="/about" onClick={() => setOpen(false)}>About</Link>
-          <Link href="/contact" onClick={() => setOpen(false)}>Contact</Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className={`${
+                pathname === item.href
+                  ? "text-[#4ca626]"
+                  : "text-gray-700"
+              }`}
+            >
+              {item.name}
+            </Link>
+          ))}
 
           {!user ? (
             <Link
               href="/login"
               onClick={() => setOpen(false)}
-              className="mt-2 bg-[#4ca626] text-white text-center py-2 rounded-full"
+              className="mt-3 bg-[#4ca626] text-white text-center py-2 rounded-full"
             >
               Login
             </Link>
