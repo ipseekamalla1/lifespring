@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, Stethoscope, Clock, Phone } from "lucide-react";
-import Toast from "@/components/Toast";
+import Toast from "@/components/ui/Toast";
 
 type Doctor = {
   id: string;

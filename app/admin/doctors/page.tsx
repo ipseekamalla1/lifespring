@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Eye, Plus, Pencil, Trash2, X, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import Toast from "../../../components/Toast";
+import Toast from "../../../components/ui/Toast";
 
 /* ================= TYPES ================= */
 

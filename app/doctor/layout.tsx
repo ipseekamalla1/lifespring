@@ -1,6 +1,6 @@
 "use client";
 
-import DoctorSidebar from "@/components/DoctorSidebar";
+import DoctorSidebar from "@/components/doctor/DoctorSidebar";
 
 export default function DoctorLayout({
   children,

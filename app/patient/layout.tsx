@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import PatientSidebar from "@/components/PatientSidebar";
+import PatientSidebar from "@/components/patient/PatientSidebar";
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
   return (

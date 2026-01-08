@@ -21,7 +21,7 @@ export default function Navbar({ user }: { user?: any }) {
 
   const navItems = [
     { name: "Home", href: "/" },
-    { name: "Doctors", href: "/doctors" },
+    { name: "Doctors", href: "/client/doctors" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
