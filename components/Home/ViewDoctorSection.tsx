@@ -10,6 +10,7 @@ const doctors = [
     email: "emily.carter@lifespring.com",
     phone: "+1 (437) 555-0198",
     desc: "Focused on preventive healthcare, long-term wellness, and personalized patient care.",
+    image: "/images/team/doctor7.jpg",
   },
   {
     name: "Dr. James Wilson",
@@ -18,6 +19,7 @@ const doctors = [
     email: "james.wilson@lifespring.com",
     phone: "+1 (416) 555-0241",
     desc: "Experienced in complex diagnosis, chronic disease management, and clinical excellence.",
+    image: "/images/team/doctor2.jpg",
   },
   {
     name: "Dr. Sophia Patel",
@@ -26,6 +28,7 @@ const doctors = [
     email: "sophia.patel@lifespring.com",
     phone: "+1 (905) 555-0312",
     desc: "Dedicated to compassionate pediatric care and supporting families through every stage.",
+    image: "/images/team/doctor3.jpg",
   },
 ];
 
@@ -61,29 +64,53 @@ export default function DoctorsSection() {
                 group bg-white rounded-3xl overflow-hidden
                 border border-gray-100 shadow-md
                 transition-all duration-500
-                hover:-translate-y-3 hover:shadow-2xl
+                hover:-translate-y-4 hover:shadow-2xl
               "
             >
-              {/* Image - 60% */}
-              <div className="relative h-[320px] bg-gradient-to-br from-[#4ca626] to-emerald-600">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-28 h-28 rounded-full bg-white/20 backdrop-blur
-                                  flex items-center justify-center
-                                  text-white text-4xl font-bold">
-                    {doc.name.charAt(0)}
-                  </div>
-                </div>
+              {/* IMAGE (60%) */}
+              <div className="relative h-[340px] overflow-hidden">
+                <img
+                  src={doc.image}
+                  alt={doc.name}
+                  className="
+                    w-full h-full object-cover
+                    transition-transform duration-700
+                    group-hover:scale-110
+                  "
+                />
 
-                {/* Gradient overlay */}
-                <div className="
-                  absolute inset-0 bg-gradient-to-t
-                  from-black/30 to-transparent
-                  opacity-0 group-hover:opacity-100
-                  transition duration-500
-                " />
+                {/* Overlay */}
+                <div
+                  className="
+                    absolute inset-0 bg-gradient-to-t
+                    from-black/50 via-black/20 to-transparent
+                    opacity-0 group-hover:opacity-100
+                    transition duration-500
+                  "
+                />
+
+                {/* Floating Name Badge */}
+                <div
+                  className="
+                    absolute bottom-5 left-5
+                    bg-white/90 backdrop-blur
+                    px-4 py-2 rounded-xl
+                    shadow-lg
+                    transform translate-y-6 opacity-0
+                    group-hover:translate-y-0 group-hover:opacity-100
+                    transition-all duration-500
+                  "
+                >
+                  <p className="text-sm font-semibold text-gray-900">
+                    {doc.name}
+                  </p>
+                  <p className="text-xs text-[#4ca626]">
+                    {doc.department}
+                  </p>
+                </div>
               </div>
 
-              {/* Content - 40% */}
+              {/* CONTENT (40%) */}
               <div className="p-8">
                 <h3 className="text-xl font-semibold text-gray-900">
                   {doc.name}
@@ -133,6 +160,7 @@ export default function DoctorsSection() {
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );
