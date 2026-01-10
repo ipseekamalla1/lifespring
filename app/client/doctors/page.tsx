@@ -14,6 +14,7 @@ const page = () => {
        < DoctorsHero/>
        <MeetOurTeam/>
        <DepartmentsTabsSection/>
+       <Footer/>
 
     </div>
   )
