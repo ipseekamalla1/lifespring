@@ -41,8 +41,7 @@ export default function ContactOptionsSection() {
   return (
     <section className="w-full py-24 bg-[#f5faf2]">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row gap-6 min-h-[420px]">
-
+        <div className="flex gap-6 min-h-[420px]">
           {options.map((item) => {
             const isActive = active === item.id;
             const Icon = item.icon;
@@ -51,30 +50,29 @@ export default function ContactOptionsSection() {
               <motion.div
                 key={item.id}
                 onHoverStart={() => setActive(item.id)}
-                animate={{ flex: isActive ? 2.2 : 1 }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-                className="relative flex bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer border border-[#4ca626]/20"
+                animate={{ flexBasis: isActive ? "55%" : "22.5%" }}
+                transition={{ duration: 0.45, ease: "easeInOut" }}
+                className="relative overflow-hidden rounded-2xl shadow-xl border border-[#4ca626]/20 bg-white cursor-pointer"
               >
-                {/* IMAGE */}
-                <div className="relative w-full h-full">
+                {/* IMAGE (STABLE SIZE) */}
+                <div className="relative w-full h-full overflow-hidden">
                   <Image
                     src={item.image}
                     alt={item.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover"
+                    priority
                   />
 
-                  {/* DARK GRADIENT */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-                  {/* ICON */}
-                  <div className="absolute top-5 right-5 w-12 h-12 rounded-full bg-[#4ca626] text-white flex items-center justify-center shadow-md">
+                  <div className="absolute top-5 right-5 w-12 h-12 rounded-full bg-[#4ca626] text-white flex items-center justify-center shadow-md z-10">
                     <Icon size={22} />
                   </div>
 
-                  {/* TITLE WHEN INACTIVE */}
                   {!isActive && (
-                    <div className="absolute bottom-6 left-0 right-0 text-center px-4">
+                    <div className="absolute bottom-6 left-0 right-0 text-center px-4 z-10">
                       <h3 className="text-white text-xl font-semibold drop-shadow">
                         {item.title}
                       </h3>
@@ -83,13 +81,13 @@ export default function ContactOptionsSection() {
                   )}
                 </div>
 
-                {/* CONTENT WHEN ACTIVE */}
+                {/* CONTENT */}
                 {isActive && (
                   <motion.div
-                    initial={{ opacity: 0, x: 30 }}
+                    initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="w-full max-w-sm bg-white p-10 flex flex-col justify-center"
+                    transition={{ delay: 0.15 }}
+                    className="absolute inset-y-0 right-0 w-[340px] bg-white p-10 flex flex-col justify-center"
                   >
                     <h3 className="text-2xl font-semibold text-slate-900 mb-3">
                       {item.title}
@@ -113,7 +111,6 @@ export default function ContactOptionsSection() {
               </motion.div>
             );
           })}
-
         </div>
       </div>
     </section>
