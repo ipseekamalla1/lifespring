@@ -47,7 +47,7 @@ export default function ContactFormSection() {
                 <div>
                   <p className="font-semibold text-slate-800">Contact Us</p>
                   <p className="text-sm text-slate-600">
-                    Mediverse@example.com
+                    Lifespring@example.com
                   </p>
                 </div>
               </div>
@@ -60,9 +60,9 @@ export default function ContactFormSection() {
                 <div>
                   <p className="font-medium text-slate-800">Medical Address</p>
                   <p className="text-sm text-slate-600">
-                    31 New Street, New York,
+                    31 New Street, Toronto,
                     <br />
-                    New York, USA
+                    Toronto,Canada
                   </p>
                 </div>
               </div>
