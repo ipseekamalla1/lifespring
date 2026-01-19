@@ -24,7 +24,7 @@ export default function Navbar({ user }: { user?: any }) {
     { name: "Doctors", href: "/client/doctors" },
     { name: "Services", href: "/client/services"},
     { name: "About", href: "/client/about" },
-    { name: "Contact", href: "/contact" },
+    { name: "Contact", href: "/client/contact" },
   ];
 
   return (
