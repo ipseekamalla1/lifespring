@@ -30,9 +30,7 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
-  const [doctorSearch, setDoctorSearch] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-  const [showList, setShowList] = useState(false);
 
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -129,36 +127,34 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
           <div className="space-y-6">
             {/* DOCTOR */}
             <div className="relative">
-              <Label>Doctor</Label>
-              <Input
-                value={doctorSearch}
-                onChange={e => {
-                  setDoctorSearch(e.target.value);
-                  setShowList(true);
-                }}
-              />
+             {/* DOCTOR SELECTION */}
+<div>
+  <Label>Doctor</Label>
 
-              {showList && (
-                <Card className="absolute z-50 w-full mt-2">
-                  {doctors
-                    .filter(d =>
-                      d.name.toLowerCase().includes(doctorSearch.toLowerCase())
-                    )
-                    .map(d => (
-                      <div
-                        key={d.id}
-                        className="p-3 cursor-pointer hover:bg-emerald-50"
-                        onClick={() => {
-                          setDoctorSearch(d.name);
-                          setSelectedDoctor(d);
-                          setShowList(false);
-                        }}
-                      >
-                        {d.name}
-                      </div>
-                    ))}
-                </Card>
-              )}
+  <Card className="max-h-48 overflow-y-auto border mt-2">
+    {doctors.map((doctor) => (
+      <div
+        key={doctor.id}
+        onClick={() => setSelectedDoctor(doctor)}
+        className={`p-3 cursor-pointer border-b last:border-b-0
+          ${
+            selectedDoctor?.id === doctor.id
+              ? "bg-emerald-600 text-white"
+              : "hover:bg-emerald-50"
+          }`}
+      >
+        {doctor.name}
+      </div>
+    ))}
+  </Card>
+
+  {selectedDoctor && (
+    <p className="text-sm mt-2 text-emerald-700">
+      Selected: {selectedDoctor.name}
+    </p>
+  )}
+</div>
+
             </div>
 
             {/* DATE */}
