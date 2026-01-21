@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+} from "@/components/ui/select";
 import BookAppointmentModal from "@/components/patient/BookAppointmentModal";
-
-
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 
@@ -18,9 +24,7 @@ type Appointment = {
   doctor: {
     name: string | null;
     specialization: string | null;
-    department: {
-      name: string;
-    } | null;
+    department: { name: string } | null;
   };
 };
 
@@ -35,20 +39,22 @@ export default function PatientAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<"ALL" | AppointmentStatus>("ALL");
+  const [activeTab, setActiveTab] =
+    useState<"ALL" | "UPCOMING" | "PAST">("ALL");
+
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
         const res = await fetch("/api/patient/appointments", {
           credentials: "include",
         });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch appointments");
-        }
-
+        if (!res.ok) throw new Error();
         const data = await res.json();
         setAppointments(data);
-      } catch (err) {
+      } catch {
         setError("Unable to load appointments");
       } finally {
         setLoading(false);
@@ -60,85 +66,139 @@ export default function PatientAppointmentsPage() {
 
   const now = new Date();
 
-  const upcoming = appointments.filter(
-    (a) => new Date(a.date) >= now
-  );
+  const filteredAppointments = appointments.filter((a) => {
+    const matchesSearch =
+      a.reason.toLowerCase().includes(search.toLowerCase()) ||
+      a.doctor.name?.toLowerCase().includes(search.toLowerCase());
 
-  const past = appointments.filter(
-    (a) => new Date(a.date) < now
-  );
+    const matchesStatus =
+      statusFilter === "ALL" || a.status === statusFilter;
+
+    const isUpcoming = new Date(a.date) >= now;
+
+    const matchesTab =
+      activeTab === "ALL"
+        ? true
+        : activeTab === "UPCOMING"
+        ? isUpcoming
+        : !isUpcoming;
+
+    return matchesSearch && matchesStatus && matchesTab;
+  });
 
   if (loading) {
-    return (
-      <div className="p-8 text-muted-foreground">
-        Loading appointments...
-      </div>
-    );
+    return <div className="p-8 text-gray-500">Loading appointments...</div>;
   }
 
   if (error) {
-    return (
-      <div className="p-8 text-red-500">
-        {error}
-      </div>
-    );
+    return <div className="p-8 text-red-500">{error}</div>;
   }
 
   return (
-    <div className="p-8 space-y-10">
+    <div className="p-8 space-y-8">
       {/* HEADER */}
-<div className="flex justify-between items-center">
-  <div>
-    <h1 className="text-3xl font-bold text-emerald-800">
-      My Appointments
-    </h1>
-    <p className="text-gray-600 mt-1">
-      View your upcoming and past medical appointments
-    </p>
-  </div>
-
-  <BookAppointmentModal
-    onSuccess={() => {
-      setLoading(true);
-      fetch("/api/patient/appointments", {
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => setAppointments(data))
-        .finally(() => setLoading(false));
-    }}
-  />
-</div>
-
-
-      {/* UPCOMING */}
-      <section>
-        <h2 className="text-xl font-semibold text-emerald-700 mb-4">
-          Upcoming Appointments
-        </h2>
-
-        {upcoming.length === 0 && (
-          <p className="text-muted-foreground">
-            No upcoming appointments.
+      <div className="flex flex-col md:flex-row justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-emerald-800">
+            My Appointments
+          </h1>
+          <p className="text-gray-600">
+            View and manage your medical visits
           </p>
-        )}
+        </div>
 
-        <div className="grid gap-4">
-          {upcoming.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-xl border bg-white p-6 shadow-sm flex justify-between items-center"
+        <BookAppointmentModal
+          onSuccess={() => {
+            setLoading(true);
+            fetch("/api/patient/appointments", {
+              credentials: "include",
+            })
+              .then((res) => res.json())
+              .then((data) => setAppointments(data))
+              .finally(() => setLoading(false));
+          }}
+        />
+      </div>
+
+      {/* FILTER BAR */}
+      <div className="bg-white border rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
+        <Input
+          placeholder="Search by doctor or reason..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="md:w-1/2"
+        />
+
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as any)}
+        >
+          <SelectTrigger className="md:w-48">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Status</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSearch("");
+            setStatusFilter("ALL");
+            setActiveTab("ALL");
+          }}
+        >
+          Clear Filters
+        </Button>
+
+        {/* TABS */}
+        <div className="flex gap-2 ml-auto">
+          {["ALL", "UPCOMING", "PAST"].map((tab) => (
+            <Button
+              key={tab}
+              size="sm"
+              variant={activeTab === tab ? "default" : "ghost"}
+              className="rounded-full px-4"
+              onClick={() => setActiveTab(tab as any)}
             >
+              {tab === "ALL"
+                ? "All"
+                : tab === "UPCOMING"
+                ? "Upcoming"
+                : "Past"}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* LIST */}
+      {filteredAppointments.length === 0 && (
+        <div className="text-center text-gray-500 py-10">
+          No appointments found
+        </div>
+      )}
+
+      <div className="grid gap-5">
+        {filteredAppointments.map((a) => (
+          <div
+            key={a.id}
+            className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition"
+          >
+            <div className="flex flex-col md:flex-row justify-between gap-4">
               <div className="space-y-1">
                 <p className="text-lg font-semibold text-emerald-800">
                   {a.doctor.name ?? "Doctor"}
                 </p>
 
                 <p className="text-sm text-gray-600">
-                  {a.doctor.specialization ?? "General"}{" "}
-                  {a.doctor.department?.name
-                    ? `• ${a.doctor.department.name}`
-                    : ""}
+                  {a.doctor.specialization ?? "General"}
+                  {a.doctor.department?.name &&
+                    ` • ${a.doctor.department.name}`}
                 </p>
 
                 <p className="text-sm">
@@ -157,45 +217,15 @@ export default function PatientAppointmentsPage() {
                 </Badge>
 
                 <Link href={`/patient/appointments/${a.id}`}>
-  <Button variant="outline" size="sm" className="bg-emerald-700 text-white">
-    View Details
-  </Button>
-</Link>
-
+                  <Button size="sm" variant="outline">
+                    View Details
+                  </Button>
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* HISTORY */}
-      <section>
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">
-          Appointment History
-        </h2>
-
-        <div className="space-y-3">
-          {past.map((a) => (
-            <div
-              key={a.id}
-              className="rounded-lg border bg-gray-50 p-4 flex justify-between items-center"
-            >
-              <div>
-                <p className="font-medium">
-                  {a.doctor.name ?? "Doctor"}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {new Date(a.date).toLocaleDateString()} — {a.reason}
-                </p>
-              </div>
-
-              <Badge className={statusStyle[a.status]}>
-                {a.status}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

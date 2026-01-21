@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import Toast from "@/components/ui/Toast";
 
 const WORK_START = 9;
 const WORK_END = 17;
@@ -20,19 +21,14 @@ const SLOT_MINUTES = 30;
 type Doctor = {
   id: string;
   name: string;
-  specialty?: string;
 };
 
-type Props = {
-  onSuccess: () => void;
-};
-
-export default function BookAppointmentModal({ onSuccess }: Props) {
+export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   const [doctorSearch, setDoctorSearch] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -42,41 +38,46 @@ export default function BookAppointmentModal({ onSuccess }: Props) {
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
 
-  /* LOAD DATA */
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  /* ---------------- LOAD DOCTORS ---------------- */
   useEffect(() => {
-    fetch("/api/patient/doctors").then(r => r.json()).then(setDoctors);
-    fetch("/api/patient/appointments").then(r => r.json()).then(setAppointments);
+    fetch("/api/patient/doctors")
+      .then(r => r.json())
+      .then(setDoctors);
   }, []);
 
-  /* SLOT LOGIC (same as admin) */
-  const availableSlots = useMemo(() => {
-    if (!date || !selectedDoctor) return [];
+  /* ---------------- FETCH BOOKED SLOTS ---------------- */
+  useEffect(() => {
+    if (!selectedDoctor || !date) return;
 
-    const booked = appointments
-      .filter(
-        a =>
-          a.doctor.id === selectedDoctor.id &&
-          a.date.split("T")[0] === date &&
-          a.status !== "CANCELLED"
-      )
-      .map(a => new Date(a.date).toTimeString().slice(0, 5));
+    fetch(`/api/appointments/byDoctor?doctorId=${selectedDoctor.id}&date=${date}`)
+      .then(r => r.json())
+      .then(data => {
+        const slots = data.map((a: any) =>
+          new Date(a.date).toTimeString().slice(0, 5)
+        );
+        setBookedSlots(slots);
+        setTime("");
+      });
+  }, [selectedDoctor, date]);
 
-    const slots: string[] = [];
+  /* ---------------- SLOTS ---------------- */
+  const slotsWithStatus = useMemo(() => {
+    const slots = [];
     for (let h = WORK_START; h < WORK_END; h++) {
       for (let m = 0; m < 60; m += SLOT_MINUTES) {
-        const slot = `${h.toString().padStart(2, "0")}:${m
+        const t = `${h.toString().padStart(2, "0")}:${m
           .toString()
           .padStart(2, "0")}`;
-        if (!booked.includes(slot)) slots.push(slot);
+
+        slots.push({ time: t, booked: bookedSlots.includes(t) });
       }
     }
     return slots;
-  }, [date, selectedDoctor, appointments]);
+  }, [bookedSlots]);
 
-  const filteredDoctors = doctors.filter(d =>
-    d.name.toLowerCase().includes(doctorSearch.toLowerCase())
-  );
-
+  /* ---------------- SUBMIT ---------------- */
   async function handleSubmit() {
     if (!selectedDoctor || !date || !time || !reason) return;
 
@@ -85,7 +86,6 @@ export default function BookAppointmentModal({ onSuccess }: Props) {
     const res = await fetch("/api/patient/appointments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({
         doctorId: selectedDoctor.id,
         date: `${date}T${time}:00`,
@@ -94,12 +94,12 @@ export default function BookAppointmentModal({ onSuccess }: Props) {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      alert(err.error || "Slot already booked");
+      setToast({ message: "Slot already booked", type: "error" });
       setLoading(false);
       return;
     }
 
+    setToast({ message: "Appointment booked successfully", type: "success" });
     setOpen(false);
     setDoctorSearch("");
     setSelectedDoctor(null);
@@ -111,113 +111,109 @@ export default function BookAppointmentModal({ onSuccess }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
-          + Book Appointment
-        </Button>
-      </DialogTrigger>
+    <>
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Book Appointment</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-
-          {/* DOCTOR SEARCH */}
-          <div className="relative">
-            <Label>Doctor</Label>
-            <Input
-              value={doctorSearch}
-              placeholder="Type doctor name"
-              onChange={e => {
-                setDoctorSearch(e.target.value);
-                setShowList(true);
-              }}
-              onFocus={() => setShowList(true)}
-            />
-
-            {showList && filteredDoctors.length > 0 && (
-              <Card className="absolute z-50 mt-1 w-full max-h-40 overflow-y-auto">
-                {filteredDoctors.map(doc => (
-                  <div
-                    key={doc.id}
-                    onClick={() => {
-                      setDoctorSearch(doc.name);
-                      setSelectedDoctor(doc);
-                      setShowList(false);
-                    }}
-                    className="px-3 py-2 cursor-pointer hover:bg-gray-100 text-sm"
-                  >
-                    <div className="font-medium">{doc.name}</div>
-                    {doc.specialty && (
-                      <div className="text-xs text-gray-500">{doc.specialty}</div>
-                    )}
-                  </div>
-                ))}
-              </Card>
-            )}
-          </div>
-
-          {/* DATE */}
-          <div>
-            <Label>Date</Label>
-            <Input
-              type="date"
-              min={new Date().toISOString().split("T")[0]}
-              value={date}
-              onChange={e => setDate(e.target.value)}
-            />
-          </div>
-
-          {/* SLOTS */}
-          {date && selectedDoctor && (
-            <div>
-              <Label>Available Time Slots</Label>
-              <div className="grid grid-cols-4 gap-2 mt-2">
-                {availableSlots.length === 0 && (
-                  <p className="col-span-4 text-sm text-red-500">
-                    No slots available
-                  </p>
-                )}
-                {availableSlots.map(slot => (
-                  <button
-                    type="button"
-                    key={slot}
-                    onClick={() => setTime(slot)}
-                    className={`py-1 rounded-lg text-sm border
-                      ${time === slot
-                        ? "bg-emerald-600 text-white"
-                        : "bg-emerald-100 text-emerald-700"}
-                    `}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* REASON */}
-          <div>
-            <Label>Reason</Label>
-            <Input
-              value={reason}
-              placeholder="Reason for visit"
-              onChange={e => setReason(e.target.value)}
-            />
-          </div>
-
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !time}
-            className="w-full"
-          >
-            {loading ? "Booking..." : "Confirm Appointment"}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button className="bg-emerald-600 hover:bg-emerald-700">
+            + Book Appointment
           </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogTrigger>
+
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Book Appointment</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* DOCTOR */}
+            <div className="relative">
+              <Label>Doctor</Label>
+              <Input
+                value={doctorSearch}
+                onChange={e => {
+                  setDoctorSearch(e.target.value);
+                  setShowList(true);
+                }}
+              />
+
+              {showList && (
+                <Card className="absolute z-50 w-full mt-2">
+                  {doctors
+                    .filter(d =>
+                      d.name.toLowerCase().includes(doctorSearch.toLowerCase())
+                    )
+                    .map(d => (
+                      <div
+                        key={d.id}
+                        className="p-3 cursor-pointer hover:bg-emerald-50"
+                        onClick={() => {
+                          setDoctorSearch(d.name);
+                          setSelectedDoctor(d);
+                          setShowList(false);
+                        }}
+                      >
+                        {d.name}
+                      </div>
+                    ))}
+                </Card>
+              )}
+            </div>
+
+            {/* DATE */}
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                value={date}
+                onChange={e => setDate(e.target.value)}
+              />
+            </div>
+
+            {/* SLOTS */}
+            {date && selectedDoctor && (
+              <div>
+                <Label>Available Slots</Label>
+                <div className="grid grid-cols-4 gap-3 mt-3">
+                  {slotsWithStatus.map(slot => (
+                    <button
+                      key={slot.time}
+                      disabled={slot.booked}
+                      onClick={() => !slot.booked && setTime(slot.time)}
+                      className={`py-2 rounded border text-sm
+                        ${
+                          slot.booked
+                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                            : time === slot.time
+                            ? "bg-emerald-600 text-white"
+                            : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                        }`}
+                    >
+                      {slot.time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* REASON */}
+            <div>
+              <Label>Reason</Label>
+              <Input value={reason} onChange={e => setReason(e.target.value)} />
+            </div>
+
+            <Button
+              disabled={!time || loading}
+              onClick={handleSubmit}
+              className="w-full bg-emerald-600 hover:bg-emerald-700"
+            >
+              {loading ? "Booking..." : "Confirm Appointment"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
