@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/login?verified=true`
+      `${process.env.NEXT_PUBLIC_APP_URL}/verify-success`
     );
   } catch (error) {
     console.error(error);
