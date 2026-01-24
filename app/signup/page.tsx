@@ -1,25 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mail, Lock, User } from "lucide-react";
 
 export default function SignupPage() {
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function handleSignup(e: any) {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess("");
 
     const res = await fetch("/api/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, name, password }),
+      body: JSON.stringify({ name, email, password }),
     });
 
     const data = await res.json();
@@ -29,46 +33,134 @@ export default function SignupPage() {
       return;
     }
 
-    setSuccess("Signup successful! You can now login.");
+      window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+
   }
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <Card className="w-[400px]">
-        <CardHeader>
-          <CardTitle className="text-center">Patient Signup</CardTitle>
-        </CardHeader>
+    <section className="w-full h-screen flex overflow-hidden">
+      {/* LEFT – IMAGE */}
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="hidden lg:block lg:w-1/2 relative"
+      >
+        <Image
+          src="/images/doctors-hero.jpg" // 👈 change image here
+          alt="Patient Signup"
+          fill
+          priority
+          className="object-cover"
+        />
+      </motion.div>
 
-        <CardContent>
-          <form onSubmit={handleSignup} className="space-y-4">
-            <Input
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+      {/* RIGHT – SIGNUP */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="w-full lg:w-1/2 flex items-center justify-center bg-[#f6faf3] px-6"
+      >
+        <Card className="w-full max-w-md shadow-xl rounded-2xl">
+          <CardContent className="p-10">
+            {/* LOGO */}
+            <div className="flex justify-center mb-8">
+              <Link href="/">
+                <div className="w-25 h-25 rounded-full bg-[#4ca626] shadow-md flex items-center justify-center hover:scale-105 transition-transform">
+                  <Image
+                    src="/images/logo2.png"
+                    alt="LifeSpring Logo"
+                    width={72}
+                    height={72}
+                    className="object-contain"
+                  />
+                </div>
+              </Link>
+            </div>
 
-            <Input
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            {/* TITLE */}
+            <h2 className="text-2xl font-semibold text-center text-slate-800 mb-6">
+              Patient Signup
+            </h2>
 
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            {/* FORM */}
+            <form onSubmit={handleSignup} className="space-y-5">
+              {/* NAME */}
+              <div className="relative">
+                <User
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  className="pl-11 h-12"
+                  placeholder="Full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {success && <p className="text-green-600 text-sm">{success}</p>}
+              {/* EMAIL */}
+              <div className="relative">
+                <Mail
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  className="pl-11 h-12"
+                  placeholder="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
 
-            <Button className="w-full" type="submit">
-              Sign Up
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+              {/* PASSWORD */}
+              <div className="relative">
+                <Lock
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  type="password"
+                  className="pl-11 h-12"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
+
+              {success && (
+                <p className="text-green-600 text-sm text-center">{success}</p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full h-12 bg-[#4ca626] hover:bg-[#3f8f1f] text-white text-base font-medium"
+              >
+                Create Account
+              </Button>
+            </form>
+
+            {/* LOGIN LINK */}
+            <p className="mt-6 text-sm text-center text-slate-600">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="text-[#4ca626] font-medium hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </section>
   );
 }

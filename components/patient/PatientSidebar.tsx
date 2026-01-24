@@ -8,7 +8,6 @@ import {
   User,
   LogOut,
   Stethoscope,
-  FileText,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -27,28 +26,29 @@ export default function PatientSidebar() {
     return (
       <Link
         href={href}
-        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition
+        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all
           ${
             active
-              ? "bg-emerald-100 text-emerald-800 font-semibold"
-              : "text-emerald-700 hover:bg-emerald-50"
+              ? "bg-emerald-600/15 text-emerald-400 font-semibold"
+              : "text-slate-300 hover:bg-slate-800 hover:text-white"
           }`}
       >
         <Icon size={18} />
-        {label}
+        <span className="text-sm">{label}</span>
       </Link>
     );
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-white border-r border-emerald-100 shadow-sm flex flex-col justify-between">
+    <aside className="w-64 min-h-screen bg-slate-950 border-r border-slate-800 shadow-lg flex flex-col justify-between">
+      
       {/* TOP */}
       <div className="p-6">
-        <h1 className="text-2xl font-bold text-emerald-800 text-center mb-8">
+        <h1 className="text-xl font-semibold text-white text-center mb-10 tracking-wide">
           Patient Panel
         </h1>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1">
           {navItem("/patient/dashboard", "Dashboard", Home)}
           {navItem("/patient/appointments", "Appointments", CalendarCheck)}
           {navItem("/patient/doctors", "Doctors", Stethoscope)}
@@ -57,10 +57,10 @@ export default function PatientSidebar() {
       </div>
 
       {/* LOGOUT */}
-      <div className="p-6">
+      <div className="p-6 border-t border-slate-800">
         <Button
           onClick={handleLogout}
-          className="w-full bg-red-500 hover:bg-red-600 text-white flex items-center gap-2"
+          className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
         >
           <LogOut size={18} />
           Logout
