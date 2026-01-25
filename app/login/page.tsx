@@ -13,31 +13,62 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [notVerified, setNotVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setNotVerified(false);
+    setLoading(true);
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
+    setLoading(false);
 
     if (!res.ok) {
-      setError(data.message);
+      if (data.code === "EMAIL_NOT_VERIFIED") {
+        setNotVerified(true);
+        setError(data.message);
+        return;
+      }
+
+      setError(data.message || "Login failed");
       return;
     }
 
     if (data.role === "ADMIN") window.location.href = "/admin/dashboard";
     if (data.role === "DOCTOR") window.location.href = "/doctor/dashboard";
-    if (data.role === "PATIENT") window.location.href = "/patient/dashboard";
+if (data.role === "PATIENT") {
+  if (!data.profileCompleted) {
+    window.location.href = "/patient/complete-profile";
+  } else {
+    window.location.href = "/patient/dashboard";
+  }
+}
+  }
+
+  async function resendVerification() {
+    setLoading(true);
+
+    await fetch("/api/auth/resend-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    setLoading(false);
+    alert("Verification email sent. Please check your inbox.");
   }
 
   return (
     <section className="w-full h-screen flex overflow-hidden">
-      {/* LEFT – FULL IMAGE */}
+      {/* LEFT IMAGE */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -53,7 +84,7 @@ export default function LoginPage() {
         />
       </motion.div>
 
-      {/* RIGHT – LOGIN */}
+      {/* RIGHT LOGIN */}
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -65,25 +96,20 @@ export default function LoginPage() {
             {/* LOGO */}
             <div className="flex justify-center mb-8">
               <Link href="/">
-                <div className="w-25 h-25 rounded-full bg-[#4ca626] shadow-md flex items-center justify-center hover:scale-105 transition-transform">
+                <div className="w-24 h-24 rounded-full bg-[#4ca626] shadow-md flex items-center justify-center">
                   <Image
                     src="/images/logo2.png"
                     alt="LifeSpring Logo"
                     width={72}
                     height={72}
-                    className="object-contain"
                   />
                 </div>
               </Link>
             </div>
 
-            {/* FORM */}
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="relative">
-                <Mail
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input
                   className="pl-11 h-12"
                   placeholder="Email address"
@@ -93,10 +119,7 @@ export default function LoginPage() {
               </div>
 
               <div className="relative">
-                <Lock
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <Input
                   type="password"
                   className="pl-11 h-12"
@@ -106,34 +129,35 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* OPTIONS */}
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-slate-600">
-                  <input type="checkbox" className="accent-[#4ca626]" />
-                  Keep me signed in
-                </label>
-
-                <Link
-                  href="/forgot-password"
-                  className="text-[#4ca626] hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
               {error && (
                 <p className="text-red-500 text-sm text-center">{error}</p>
               )}
 
+              {notVerified && (
+                <div className="text-center space-y-2">
+                  <p className="text-sm text-amber-600">
+                    Your email is not verified.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resendVerification}
+                    className="text-sm font-medium text-[#4ca626] hover:underline"
+                    disabled={loading}
+                  >
+                    Resend verification email
+                  </button>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                className="w-full h-12 bg-[#4ca626] hover:bg-[#3f8f1f] text-white text-base font-medium"
+                disabled={loading}
+                className="w-full h-12 bg-[#4ca626] hover:bg-[#3f8f1f] text-white"
               >
-                Sign In
+                {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 
-            {/* REGISTER */}
             <p className="mt-6 text-sm text-center text-slate-600">
               Don’t have an account?{" "}
               <Link
