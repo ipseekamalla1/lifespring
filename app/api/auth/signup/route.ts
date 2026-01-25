@@ -1,66 +1,76 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationEmail } from "@/lib/email";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const body = await req.json();
+    const { fname, lname, email, password } = body;
 
-    if (!email || !password || !name) {
+    // ✅ Validation
+    if (!fname || !lname || !email || !password) {
       return NextResponse.json(
         { message: "All fields are required" },
         { status: 400 }
       );
     }
 
+    // ✅ Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "Email already registered" },
+        { message: "Email already in use" },
         { status: 409 }
       );
     }
 
+    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 1️⃣ Create user
+    // ✅ 1. CREATE USER (NO fname / lname here)
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         role: "PATIENT",
-        patient: {
-          create: { name },
-        },
+        emailVerified: false,
       },
     });
 
-    // 2️⃣ Create verification token
-    const token = crypto.randomUUID();
-
-    await prisma.VerificationToken.create({
+    // ✅ 2. CREATE PATIENT PROFILE (THIS is where names go)
+    await prisma.patient.create({
       data: {
         userId: user.id,
-        token,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+        firstName: fname,
+        lastName: lname,
       },
     });
 
-    // 3️⃣ Send email
-    await sendVerificationEmail(email, token);
+    // ✅ 3. Create verification token (PATIENT only)
+    const token = crypto.randomUUID();
 
-    return NextResponse.json({
-      message: "Signup successful. Please verify your email.",
+    await prisma.verificationToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
+      },
     });
+
+    return NextResponse.json(
+      {
+        message: "Account created. Please verify your email.",
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "Something went wrong" },
+      { message: "Signup failed" },
       { status: 500 }
     );
   }

@@ -10,7 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Lock, User } from "lucide-react";
 
 export default function SignupPage() {
-  const [name, setName] = useState("");
+  const [fname, setFname] = useState("");
+  const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,18 +24,25 @@ export default function SignupPage() {
 
     const res = await fetch("/api/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ name, email, password }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fname,
+        lname,
+        email,
+        password,
+      }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data.message);
+      setError(data.message || "Something went wrong");
       return;
     }
 
-      window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
-
+    window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
   }
 
   return (
@@ -47,7 +55,7 @@ export default function SignupPage() {
         className="hidden lg:block lg:w-1/2 relative"
       >
         <Image
-          src="/images/doctors-hero.jpg" // 👈 change image here
+          src="/images/doctors-hero.jpg"
           alt="Patient Signup"
           fill
           priority
@@ -86,7 +94,7 @@ export default function SignupPage() {
 
             {/* FORM */}
             <form onSubmit={handleSignup} className="space-y-5">
-              {/* NAME */}
+              {/* FIRST NAME */}
               <div className="relative">
                 <User
                   size={18}
@@ -94,9 +102,24 @@ export default function SignupPage() {
                 />
                 <Input
                   className="pl-11 h-12"
-                  placeholder="Full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="First name"
+                  value={fname}
+                  onChange={(e) => setFname(e.target.value)}
+                  required
+                />
+              </div>
+
+              {/* LAST NAME */}
+              <div className="relative">
+                <User
+                  size={18}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <Input
+                  className="pl-11 h-12"
+                  placeholder="Last name"
+                  value={lname}
+                  onChange={(e) => setLname(e.target.value)}
                   required
                 />
               </div>
