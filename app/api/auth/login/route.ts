@@ -7,6 +7,7 @@ export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
+    /* ---------------- VALIDATION ---------------- */
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required" },
@@ -14,10 +15,14 @@ export async function POST(req: Request) {
       );
     }
 
-     const user = await prisma.user.findUnique({
-    where: { email },
-    include: { patient: true },
-  });
+    /* ---------------- FETCH USER ---------------- */
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        patient: true, // 🔥 REQUIRED
+      },
+    });
+
     if (!user) {
       return NextResponse.json(
         { message: "Invalid email or password" },
@@ -25,6 +30,7 @@ export async function POST(req: Request) {
       );
     }
 
+    /* ---------------- PASSWORD CHECK ---------------- */
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       return NextResponse.json(
@@ -33,8 +39,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🚫 BLOCK LOGIN IF EMAIL NOT VERIFIED
-    if (user.role== 'PATIENT' && !user.emailVerified) {
+    /* ---------------- EMAIL VERIFICATION ---------------- */
+    if (user.role === "PATIENT" && !user.emailVerified) {
       return NextResponse.json(
         {
           message: "Please verify your email before logging in",
@@ -44,23 +50,29 @@ export async function POST(req: Request) {
       );
     }
 
+    /* ---------------- PROFILE COMPLETION ---------------- */
     let profileCompleted = true;
 
-  if (user.role === "PATIENT") {
-    profileCompleted =
-      !!user.patient?.firstName &&
-      !!user.patient?.lastName;
-  }
+    if (user.role === "PATIENT") {
+      profileCompleted = user.patient?.profileCompleted ?? false;
+    }
 
+    /* ---------------- JWT ---------------- */
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      {
+        id: user.id,
+        role: user.role,
+        profileCompleted, // ✅ IMPORTANT
+      },
       process.env.JWT_SECRET!,
       { expiresIn: "1d" }
     );
 
+    /* ---------------- RESPONSE ---------------- */
     const res = NextResponse.json({
       message: "Login success",
       role: user.role,
+      profileCompleted, // ✅ FRONTEND NEEDS THIS
     });
 
     res.cookies.set("session", token, {

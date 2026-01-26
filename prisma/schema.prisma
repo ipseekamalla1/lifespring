@@ -38,7 +38,7 @@ model Patient {
   firstName String?
   lastName  String?
 
-  age     Int?
+  dateOfBirth DateTime?
   gender  String?
   address String?
   phone   String?

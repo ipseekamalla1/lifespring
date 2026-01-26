@@ -46,7 +46,7 @@ export default function LoginPage() {
     if (data.role === "DOCTOR") window.location.href = "/doctor/dashboard";
 if (data.role === "PATIENT") {
   if (!data.profileCompleted) {
-    window.location.href = "/patient/complete-profile";
+    window.location.href = "/complete-profile";
   } else {
     window.location.href = "/patient/dashboard";
   }
