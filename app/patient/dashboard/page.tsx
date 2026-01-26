@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  User2,
-  Clock,
   CalendarDays,
   Stethoscope,
   ListChecks,
@@ -53,135 +51,101 @@ export default function PatientDashboard() {
 
   if (loading)
     return (
-      <div className="text-center py-12 text-gray-500">Loading Dashboard...</div>
+      <div className="text-center py-12 text-gray-500">
+        Loading dashboard...
+      </div>
     );
 
   const upcoming = appointments.filter(a => a.status === "Scheduled");
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 max-w-7xl mx-auto space-y-10">
 
-      {/* ======== Hero Header ======== */}
+      {/* ================= Header ================= */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-green-900">
-              Hello, {patient?.name || "Patient"} 👋
-            </h1>
-            <p className="text-sm text-green-600">
-              Welcome back to your dashboard
-            </p>
-          </div>
-          <div className="bg-green-200 p-2 rounded-full shadow-md">
-            <User2 className="w-10 h-10 text-green-800" />
-          </div>
-        </div>
+        <h1 className="text-3xl font-semibold text-green-900">
+  Hello{patient?.firstName ? `, ${patient.firstName}` : ""}
+</h1>
+
+<p className="text-sm text-green-700 mt-1">
+  {patient?.gender && patient.gender}
+</p>
+
+
       </motion.div>
 
-      {/* ======== Stats Cards ======== */}
+      {/* ================= Stats ================= */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="shadow-lg border border-green-200 hover:shadow-xl transition">
-            <CardContent className="flex items-center gap-4">
-              <CalendarDays className="w-6 h-6 text-green-500" />
-              <div>
-                <p className="text-lg font-semibold text-green-800">
-                  {appointments.length}
-                </p>
-                <p className="text-sm text-green-600">Total Appointments</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="shadow-lg border border-green-200 hover:shadow-xl transition">
-            <CardContent className="flex items-center gap-4">
-              <Stethoscope className="w-6 h-6 text-green-500" />
-              <div>
-                <p className="text-lg font-semibold text-green-800">
-                  {Array.from(new Set(appointments.map(a => a.doctorName))).length}
-                </p>
-                <p className="text-sm text-green-600">Doctors Visited</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="shadow-lg border border-green-200 hover:shadow-xl transition">
-            <CardContent className="flex items-center gap-4">
-              <ListChecks className="w-6 h-6 text-green-500" />
-              <div>
-                <p className="text-lg font-semibold text-green-800">
-                  {upcoming.length}
-                </p>
-                <p className="text-sm text-green-600">Upcoming</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {[
+          {
+            label: "Total Appointments",
+            value: appointments.length,
+            icon: CalendarDays,
+          },
+          {
+            label: "Doctors Consulted",
+            value: new Set(appointments.map(a => a.doctorName)).size,
+            icon: Stethoscope,
+          },
+          {
+            label: "Upcoming Appointments",
+            value: upcoming.length,
+            icon: ListChecks,
+          },
+        ].map((item, i) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <Card className="border border-green-100 shadow-sm">
+              <CardContent className="flex items-center justify-between py-5">
+                <div>
+                  <p className="text-sm text-green-600">{item.label}</p>
+                  <p className="text-2xl font-semibold text-green-900">
+                    {item.value}
+                  </p>
+                </div>
+                <item.icon className="w-6 h-6 text-green-500" />
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
-      {/* ======== Quick Actions ======== */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex gap-4 flex-wrap">
-          <Button variant="default" onClick={() => router.push("/patient/profile")}>
-            View Profile
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/patient/doctors")}>
-            Find Doctors
-          </Button>
-          <Button variant="outline" onClick={() => router.push("/patient/appointments")}>
-            My Appointments
-          </Button>
-        </div>
-      </motion.div>
+      
 
-      {/* ======== Recent Appointments Table ======== */}
+      {/* ================= Appointments ================= */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
+        className="space-y-4"
       >
-        <h2 className="text-xl font-bold text-green-900">
+        <h2 className="text-xl font-semibold text-green-900">
           Recent Appointments
         </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto text-sm text-left text-green-800">
-            <thead className="text-green-600 uppercase bg-green-50">
+        <div className="overflow-x-auto border rounded-lg">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-green-50 text-green-700">
               <tr>
-                <th className="px-4 py-2">Doctor</th>
-                <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Time</th>
-                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-3 font-medium">Doctor</th>
+                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Time</th>
+                <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
               {appointments.slice(-6).reverse().map(app => (
-                <tr key={app.id} className="border-b">
-                  <td className="px-4 py-2">{app.doctorName}</td>
-                  <td className="px-4 py-2">{app.date}</td>
-                  <td className="px-4 py-2">{app.time}</td>
-                  <td className="px-4 py-2">
+                <tr key={app.id} className="border-t">
+                  <td className="px-4 py-3">{app.doctorName}</td>
+                  <td className="px-4 py-3">{app.date}</td>
+                  <td className="px-4 py-3">{app.time}</td>
+                  <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         app.status === "Completed"
@@ -196,11 +160,20 @@ export default function PatientDashboard() {
                   </td>
                 </tr>
               ))}
+              {appointments.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="text-center py-6 text-gray-500"
+                  >
+                    No appointments found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </motion.div>
-
     </div>
   );
 }

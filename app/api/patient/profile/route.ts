@@ -15,10 +15,7 @@ export async function GET() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       id: string;
       role: "PATIENT" | "DOCTOR" | "ADMIN";
     };
@@ -31,15 +28,33 @@ export async function GET() {
       where: { userId: decoded.id },
     });
 
-    // ✅ Safety: ensure row always exists
+    // ✅ Ensure patient row always exists
     if (!patient) {
       patient = await prisma.patient.create({
-        data: { userId: decoded.id },
+        data: {
+          userId: decoded.id,
+          firstName: "",
+          lastName: "",
+        },
       });
     }
 
-    return NextResponse.json(patient);
-  } catch {
+    // ✅ Return clean payload for frontend
+    return NextResponse.json({
+      id: patient.id,
+      firstName: patient.firstName,
+      lastName: patient.lastName,
+      dateOfBirth: patient.dateOfBirth,
+      gender: patient.gender,
+      address: patient.address,
+      phone: patient.phone,
+      bloodGroup: patient.bloodGroup,
+      allergies: patient.allergies,
+      photoUrl: patient.photoUrl,
+      profileCompleted: patient.profileCompleted,
+    });
+  } catch (error) {
+    console.error("GET PATIENT PROFILE ERROR:", error);
     return NextResponse.json(
       { message: "Failed to fetch profile" },
       { status: 500 }
@@ -52,17 +67,14 @@ export async function GET() {
 ======================= */
 export async function PATCH(req: Request) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get("session")?.value;
 
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET!
-    ) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       id: string;
       role: "PATIENT" | "DOCTOR" | "ADMIN";
     };
@@ -73,12 +85,18 @@ export async function PATCH(req: Request) {
 
     const { field, value } = await req.json();
 
+    // ✅ Fields allowed by your schema
     const allowedFields = [
-      "name",
-      "age",
+      "firstName",
+      "lastName",
+      "dateOfBirth",
       "gender",
-      "phone",
       "address",
+      "phone",
+      "bloodGroup",
+      "allergies",
+      "photoUrl",
+      "profileCompleted",
     ];
 
     if (!allowedFields.includes(field)) {
@@ -88,12 +106,27 @@ export async function PATCH(req: Request) {
     const updatedPatient = await prisma.patient.update({
       where: { userId: decoded.id },
       data: {
-        [field]: field === "age" && value ? Number(value) : value,
+        [field]:
+          field === "dateOfBirth" && value
+            ? new Date(value)
+            : value,
       },
     });
 
-    return NextResponse.json(updatedPatient);
-  } catch {
+    return NextResponse.json({
+      firstName: updatedPatient.firstName,
+      lastName: updatedPatient.lastName,
+      dateOfBirth: updatedPatient.dateOfBirth,
+      gender: updatedPatient.gender,
+      address: updatedPatient.address,
+      phone: updatedPatient.phone,
+      bloodGroup: updatedPatient.bloodGroup,
+      allergies: updatedPatient.allergies,
+      photoUrl: updatedPatient.photoUrl,
+      profileCompleted: updatedPatient.profileCompleted,
+    });
+  } catch (error) {
+    console.error("PATCH PATIENT PROFILE ERROR:", error);
     return NextResponse.json(
       { message: "Failed to update field" },
       { status: 500 }
