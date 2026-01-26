@@ -23,7 +23,11 @@ type Doctor = {
   name: string;
 };
 
-export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => void }) {
+export default function BookAppointmentModal({
+  onSuccess,
+}: {
+  onSuccess: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -31,17 +35,19 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [reason, setReason] = useState("");
 
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   /* ---------------- LOAD DOCTORS ---------------- */
   useEffect(() => {
     fetch("/api/patient/doctors")
-      .then(r => r.json())
+      .then((r) => r.json())
       .then(setDoctors);
   }, []);
 
@@ -49,9 +55,11 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
   useEffect(() => {
     if (!selectedDoctor || !date) return;
 
-    fetch(`/api/appointments/byDoctor?doctorId=${selectedDoctor.id}&date=${date}`)
-      .then(r => r.json())
-      .then(data => {
+    fetch(
+      `/api/appointments/byDoctor?doctorId=${selectedDoctor.id}&date=${date}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
         const slots = data.map((a: any) =>
           new Date(a.date).toTimeString().slice(0, 5)
         );
@@ -60,7 +68,7 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
       });
   }, [selectedDoctor, date]);
 
-  /* ---------------- SLOTS ---------------- */
+  /* ---------------- TIME SLOTS ---------------- */
   const slotsWithStatus = useMemo(() => {
     const slots = [];
     for (let h = WORK_START; h < WORK_END; h++) {
@@ -97,9 +105,12 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
       return;
     }
 
-    setToast({ message: "Appointment booked successfully", type: "success" });
+    setToast({
+      message: "Appointment booked successfully",
+      type: "success",
+    });
+
     setOpen(false);
-    setDoctorSearch("");
     setSelectedDoctor(null);
     setDate("");
     setTime("");
@@ -114,7 +125,7 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="bg-emerald-600 hover:bg-emerald-700">
+          <Button className="bg-[#4ca626] hover:bg-emerald-700">
             + Book Appointment
           </Button>
         </DialogTrigger>
@@ -126,35 +137,31 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
 
           <div className="space-y-6">
             {/* DOCTOR */}
-            <div className="relative">
-             {/* DOCTOR SELECTION */}
-<div>
-  <Label>Doctor</Label>
+            <div>
+              <Label>Doctor</Label>
 
-  <Card className="max-h-48 overflow-y-auto border mt-2">
-    {doctors.map((doctor) => (
-      <div
-        key={doctor.id}
-        onClick={() => setSelectedDoctor(doctor)}
-        className={`p-3 cursor-pointer border-b last:border-b-0
-          ${
-            selectedDoctor?.id === doctor.id
-              ? "bg-emerald-600 text-white"
-              : "hover:bg-emerald-50"
-          }`}
-      >
-        {doctor.name}
-      </div>
-    ))}
-  </Card>
+              <Card className="max-h-48 overflow-y-auto border mt-2">
+                {doctors.map((doctor) => (
+                  <div
+                    key={doctor.id}
+                    onClick={() => setSelectedDoctor(doctor)}
+                    className={`p-3 cursor-pointer border-b last:border-b-0
+                      ${
+                        selectedDoctor?.id === doctor.id
+                          ? "bg-emerald-600 text-white"
+                          : "hover:bg-emerald-50"
+                      }`}
+                  >
+                    {doctor.name}
+                  </div>
+                ))}
+              </Card>
 
-  {selectedDoctor && (
-    <p className="text-sm mt-2 text-emerald-700">
-      Selected: {selectedDoctor.name}
-    </p>
-  )}
-</div>
-
+              {selectedDoctor && (
+                <p className="text-sm mt-2 text-emerald-700">
+                  Selected: {selectedDoctor.name}
+                </p>
+              )}
             </div>
 
             {/* DATE */}
@@ -164,7 +171,7 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
                 type="date"
                 min={new Date().toISOString().split("T")[0]}
                 value={date}
-                onChange={e => setDate(e.target.value)}
+                onChange={(e) => setDate(e.target.value)}
               />
             </div>
 
@@ -173,7 +180,7 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
               <div>
                 <Label>Available Slots</Label>
                 <div className="grid grid-cols-4 gap-3 mt-3">
-                  {slotsWithStatus.map(slot => (
+                  {slotsWithStatus.map((slot) => (
                     <button
                       key={slot.time}
                       disabled={slot.booked}
@@ -197,7 +204,10 @@ export default function BookAppointmentModal({ onSuccess }: { onSuccess: () => v
             {/* REASON */}
             <div>
               <Label>Reason</Label>
-              <Input value={reason} onChange={e => setReason(e.target.value)} />
+              <Input
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
             </div>
 
             <Button

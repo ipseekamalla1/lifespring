@@ -29,7 +29,7 @@ type Appointment = {
 };
 
 const statusStyle: Record<AppointmentStatus, string> = {
-  CONFIRMED: "bg-emerald-100 text-emerald-800",
+  CONFIRMED: "bg-[#4ca626]/10 text-[#4ca626]",
   PENDING: "bg-yellow-100 text-yellow-800",
   CANCELLED: "bg-red-100 text-red-800",
 };
@@ -46,22 +46,11 @@ export default function PatientAppointmentsPage() {
     useState<"ALL" | "UPCOMING" | "PAST">("ALL");
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const res = await fetch("/api/patient/appointments", {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        setAppointments(data);
-      } catch {
-        setError("Unable to load appointments");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
+    fetch("/api/patient/appointments", { credentials: "include" })
+      .then((res) => res.json())
+      .then(setAppointments)
+      .catch(() => setError("Unable to load appointments"))
+      .finally(() => setLoading(false));
   }, []);
 
   const now = new Date();
@@ -86,20 +75,18 @@ export default function PatientAppointmentsPage() {
     return matchesSearch && matchesStatus && matchesTab;
   });
 
-  if (loading) {
+  if (loading)
     return <div className="p-8 text-gray-500">Loading appointments...</div>;
-  }
 
-  if (error) {
+  if (error)
     return <div className="p-8 text-red-500">{error}</div>;
-  }
 
   return (
     <div className="p-8 space-y-8">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-emerald-800">
+          <h1 className="text-3xl font-bold text-gray-900">
             My Appointments
           </h1>
           <p className="text-gray-600">
@@ -114,26 +101,26 @@ export default function PatientAppointmentsPage() {
               credentials: "include",
             })
               .then((res) => res.json())
-              .then((data) => setAppointments(data))
+              .then(setAppointments)
               .finally(() => setLoading(false));
           }}
         />
       </div>
 
       {/* FILTER BAR */}
-      <div className="bg-white border rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
+      <div className="bg-white/90 backdrop-blur border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center shadow">
         <Input
           placeholder="Search by doctor or reason..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="md:w-1/2"
+          className="md:w-1/2 border-gray-300 focus-visible:ring-[#4ca626]"
         />
 
         <Select
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as any)}
         >
-          <SelectTrigger className="md:w-48">
+          <SelectTrigger className="md:w-48 border-gray-300 focus:ring-[#4ca626]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -145,8 +132,9 @@ export default function PatientAppointmentsPage() {
         </Select>
 
         <Button
-          variant="outline"
           size="sm"
+          variant="outline"
+          className="border-[#4ca626] text-[#4ca626] hover:bg-[#4ca626]/10"
           onClick={() => {
             setSearch("");
             setStatusFilter("ALL");
@@ -156,42 +144,54 @@ export default function PatientAppointmentsPage() {
           Clear Filters
         </Button>
 
-        {/* TABS */}
+        {/* TABS (FIXED — no black fallback) */}
         <div className="flex gap-2 ml-auto">
-          {["ALL", "UPCOMING", "PAST"].map((tab) => (
-            <Button
-              key={tab}
-              size="sm"
-              variant={activeTab === tab ? "default" : "ghost"}
-              className="rounded-full px-4"
-              onClick={() => setActiveTab(tab as any)}
-            >
-              {tab === "ALL"
-                ? "All"
-                : tab === "UPCOMING"
-                ? "Upcoming"
-                : "Past"}
-            </Button>
-          ))}
+          {["ALL", "UPCOMING", "PAST"].map((tab) => {
+            const isActive = activeTab === tab;
+
+            return (
+              <Button
+                key={tab}
+                size="sm"
+                variant="outline"
+                className={
+                  isActive
+                    ? "bg-[#4ca626] text-white border-[#4ca626] hover:bg-[#449521]"
+                    : "border-gray-300 text-gray-600 hover:border-[#4ca626] hover:text-[#4ca626] hover:bg-[#4ca626]/10"
+                }
+                onClick={() => setActiveTab(tab as any)}
+              >
+                {tab === "ALL"
+                  ? "All"
+                  : tab === "UPCOMING"
+                  ? "Upcoming"
+                  : "Past"}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
-      {/* LIST */}
+      {/* EMPTY */}
       {filteredAppointments.length === 0 && (
         <div className="text-center text-gray-500 py-10">
           No appointments found
         </div>
       )}
 
-      <div className="grid gap-5">
+      {/* CARDS — IMPROVED */}
+      <div className="grid gap-6">
         {filteredAppointments.map((a) => (
           <div
             key={a.id}
-            className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md transition"
+            className="relative rounded-2xl bg-white border border-gray-200 p-6 shadow-md hover:shadow-xl transition"
           >
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-              <div className="space-y-1">
-                <p className="text-lg font-semibold text-emerald-800">
+            {/* Accent strip */}
+            <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-[#4ca626]" />
+
+            <div className="flex flex-col md:flex-row justify-between gap-6 pl-3">
+              <div className="space-y-2">
+                <p className="text-lg font-semibold text-[#4ca626]">
                   {a.doctor.name ?? "Doctor"}
                 </p>
 
@@ -201,11 +201,16 @@ export default function PatientAppointmentsPage() {
                     ` • ${a.doctor.department.name}`}
                 </p>
 
-                <p className="text-sm">
-                  📅 {new Date(a.date).toLocaleString()}
+                <p className="text-sm text-gray-700">
+                  📅{" "}
+                  {new Date(a.date).toLocaleDateString()} •{" "}
+                  {new Date(a.date).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
 
-                <p className="text-sm">
+                <p className="text-sm text-gray-700">
                   <span className="font-medium">Reason:</span>{" "}
                   {a.reason}
                 </p>
@@ -217,7 +222,11 @@ export default function PatientAppointmentsPage() {
                 </Badge>
 
                 <Link href={`/patient/appointments/${a.id}`}>
-                  <Button size="sm" variant="outline">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-[#4ca626] text-[#4ca626] hover:bg-[#4ca626]/10"
+                  >
                     View Details
                   </Button>
                 </Link>
