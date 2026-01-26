@@ -11,22 +11,42 @@ import {
   ListChecks,
 } from "lucide-react";
 
+/* =======================
+   TYPES
+======================= */
 type Patient = {
-  name?: string;
-  age?: number;
+  firstName?: string;
   gender?: string;
-  phone?: string;
-  address?: string;
 };
 
 type Appointment = {
   id: string;
-  doctorName: string;
   date: string;
-  time: string;
-  status: "Scheduled" | "Completed" | "Cancelled";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  doctor: {
+    name: string | null;
+  };
 };
 
+/* =======================
+   DATE HELPERS
+======================= */
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+/* =======================
+   COMPONENT
+======================= */
 export default function PatientDashboard() {
   const router = useRouter();
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -40,8 +60,8 @@ export default function PatientDashboard() {
       setPatient(profileData);
 
       const appointmentsRes = await fetch("/api/patient/appointments");
-      const data = await appointmentsRes.json();
-      setAppointments(Array.isArray(data) ? data : []);
+      const appointmentsData = await appointmentsRes.json();
+      setAppointments(Array.isArray(appointmentsData) ? appointmentsData : []);
 
       setLoading(false);
     };
@@ -49,14 +69,15 @@ export default function PatientDashboard() {
     fetchDashboardData();
   }, []);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="text-center py-12 text-gray-500">
         Loading dashboard...
       </div>
     );
+  }
 
-  const upcoming = appointments.filter(a => a.status === "Scheduled");
+  const upcoming = appointments.filter(a => a.status === "CONFIRMED");
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-10">
@@ -67,14 +88,11 @@ export default function PatientDashboard() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="text-3xl font-semibold text-green-900">
-  Hello{patient?.firstName ? `, ${patient.firstName}` : ""}
-</h1>
-
-<p className="text-sm text-green-700 mt-1">
-  {patient?.gender && patient.gender}
-</p>
-
-
+          Hello{patient?.firstName ? `, ${patient.firstName}` : ""}
+        </h1>
+        <p className="text-sm text-green-700 mt-1">
+          {patient?.gender || ""}
+        </p>
       </motion.div>
 
       {/* ================= Stats ================= */}
@@ -87,7 +105,9 @@ export default function PatientDashboard() {
           },
           {
             label: "Doctors Consulted",
-            value: new Set(appointments.map(a => a.doctorName)).size,
+            value: new Set(
+              appointments.map(a => a.doctor?.name).filter(Boolean)
+            ).size,
             icon: Stethoscope,
           },
           {
@@ -117,8 +137,6 @@ export default function PatientDashboard() {
         ))}
       </div>
 
-      
-
       {/* ================= Appointments ================= */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -140,17 +158,23 @@ export default function PatientDashboard() {
               </tr>
             </thead>
             <tbody>
-              {appointments.slice(-6).reverse().map(app => (
+              {appointments.slice(0, 6).map(app => (
                 <tr key={app.id} className="border-t">
-                  <td className="px-4 py-3">{app.doctorName}</td>
-                  <td className="px-4 py-3">{app.date}</td>
-                  <td className="px-4 py-3">{app.time}</td>
+                  <td className="px-4 py-3">
+                    {app.doctor?.name || "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDate(app.date)}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatTime(app.date)}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        app.status === "Completed"
+                        app.status === "CONFIRMED"
                           ? "bg-green-100 text-green-800"
-                          : app.status === "Scheduled"
+                          : app.status === "PENDING"
                           ? "bg-yellow-100 text-yellow-800"
                           : "bg-red-100 text-red-800"
                       }`}
@@ -160,12 +184,10 @@ export default function PatientDashboard() {
                   </td>
                 </tr>
               ))}
+
               {appointments.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="text-center py-6 text-gray-500"
-                  >
+                  <td colSpan={4} className="text-center py-6 text-gray-500">
                     No appointments found
                   </td>
                 </tr>
