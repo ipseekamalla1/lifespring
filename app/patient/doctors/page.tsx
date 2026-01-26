@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Stethoscope, Building2, Clock } from "lucide-react";
+import {
+  Stethoscope,
+  Building2,
+  Clock,
+  ChevronRight,
+} from "lucide-react";
 
 type Doctor = {
   id: string;
@@ -28,77 +33,85 @@ export default function DoctorsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <p className="text-sm text-muted-foreground">Loading doctors...</p>
+      <div className="p-8 max-w-7xl mx-auto">
+        <p className="text-sm text-gray-500">Loading doctors...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-10">
       {/* HEADER */}
-      <div>
-        <h1 className="text-2xl font-semibold">Our Doctors</h1>
-        <p className="text-sm text-muted-foreground">
-          Choose a doctor and book your appointment
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold text-gray-900">
+          Our Doctors
+        </h1>
+        <p className="text-gray-600">
+          Choose a trusted specialist and book your appointment
         </p>
+        <div className="h-1 w-14 bg-[#4ca626] rounded-full" />
       </div>
 
-      {/* EMPTY STATE */}
+      {/* EMPTY */}
       {doctors.length === 0 && (
-        <div className="border rounded-xl p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center text-gray-500 bg-white">
           No doctors are available at the moment.
         </div>
       )}
 
-      {/* DOCTOR GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {doctors.map((doc) => (
           <Card
             key={doc.id}
-            className="hover:shadow-lg transition-shadow border"
+            className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
           >
-            <CardContent className="p-5 space-y-4">
-              {/* TOP */}
-              <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <Stethoscope className="h-5 w-5 text-emerald-700" />
+            {/* TOP ACCENT */}
+            <div className="absolute inset-x-0 top-0 h-1 bg-[#4ca626]" />
+
+            <CardContent className="p-6 space-y-6">
+              {/* HEADER */}
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-[#4ca626]/15 flex items-center justify-center transition group-hover:bg-[#4ca626]">
+                  <Stethoscope className="h-6 w-6 text-[#4ca626] group-hover:text-white transition" />
                 </div>
 
                 <div className="flex-1">
-                  <p className="font-medium leading-tight">
+                  <p className="font-semibold text-gray-900 leading-tight">
                     {doc.name || "Doctor"}
                   </p>
-                  <p className="text-sm text-emerald-700">
+                  <p className="text-sm text-[#4ca626]">
                     {doc.specialization || "General Physician"}
                   </p>
                 </div>
               </div>
 
               {/* DETAILS */}
-              <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="space-y-2 text-sm text-gray-600">
                 {doc.department && (
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
+                    <Building2 className="h-4 w-4 text-gray-500" />
                     <span>{doc.department}</span>
                   </div>
                 )}
 
                 {doc.experience !== undefined && (
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>{doc.experience} years experience</span>
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span>{doc.experience}+ years experience</span>
                   </div>
                 )}
               </div>
 
               {/* ACTION */}
               <Button
-                size="sm"
-                className="w-full mt-2 bg-emerald-700"
-                onClick={() => router.push(`/patient/doctors/${doc.id}`)}
+                className="w-full flex items-center justify-center gap-2 bg-[#4ca626] hover:bg-[#449620] text-white transition"
+                onClick={() =>
+                  router.push(`/patient/doctors/${doc.id}`)
+                }
               >
                 View Profile
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
