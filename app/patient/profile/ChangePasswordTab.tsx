@@ -12,35 +12,15 @@ export default function ChangePasswordTab() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Inline error state for form validation
-  const [errors, setErrors] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErrors({ currentPassword: "", newPassword: "", confirmPassword: "" });
-
-    // ---------- frontend validations ----------
-    let hasError = false;
-    if (!currentPassword) {
-      setErrors(prev => ({ ...prev, currentPassword: "Current password is required" }));
-      hasError = true;
-    }
-    if (!newPassword || newPassword.length < 8) {
-      setErrors(prev => ({ ...prev, newPassword: "New password must be at least 8 characters" }));
-      hasError = true;
-    }
-    if (newPassword !== confirmPassword) {
-      setErrors(prev => ({ ...prev, confirmPassword: "Passwords do not match" }));
-      hasError = true;
-    }
-    if (hasError) return;
-    // -------------------------------------------
-
     setLoading(true);
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/patient/changePassword", {
@@ -49,76 +29,62 @@ export default function ChangePasswordTab() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      const data = await res.json();
+      if (!res.ok) throw new Error();
 
-      if (!res.ok) {
-        // ✅ Show specific error from API if current password is wrong
-        toast.error(data?.message || "Failed to update password");
-
-        // If current password is wrong, also set inline error
-        if (data?.message === "Current password is incorrect") {
-          setErrors(prev => ({ ...prev, currentPassword: "Current password is incorrect" }));
-        }
-
-        return;
-      }
-
-      toast.success("Password updated successfully");
+      toast.success("Password updated");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error) {
-      console.error(error);
-      toast.error("Something went wrong");
+    } catch {
+      toast.error("Failed to update password");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
-      <div>
-        <Label htmlFor="currentPassword">Current Password</Label>
-        <Input
-          id="currentPassword"
-          type="password"
-          value={currentPassword}
-          onChange={e => setCurrentPassword(e.target.value)}
-        />
-        {errors.currentPassword && (
-          <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>
-        )}
-      </div>
+    <div className="space-y-6 max-w-xl">
+      <h3 className="text-lg font-semibold">Change Password</h3>
 
-      <div>
-        <Label htmlFor="newPassword">New Password</Label>
-        <Input
-          id="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={e => setNewPassword(e.target.value)}
-        />
-        {errors.newPassword && (
-          <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
-        )}
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <Label>Current Password</Label>
+          <Input
+            type="password"
+            value={currentPassword}
+            onChange={e => setCurrentPassword(e.target.value)}
+            className="focus-visible:ring-[#4ca626]"
+          />
+        </div>
 
-      <div>
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          value={confirmPassword}
-          onChange={e => setConfirmPassword(e.target.value)}
-        />
-        {errors.confirmPassword && (
-          <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
-        )}
-      </div>
+        <div>
+          <Label>New Password</Label>
+          <Input
+            type="password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            className="focus-visible:ring-[#4ca626]"
+          />
+        </div>
 
-      <Button type="submit" disabled={loading} className="w-ful bg-emerald-700">
-        {loading ? "Updating..." : "Update Password"}
-      </Button>
-    </form>
+        <div>
+          <Label>Confirm Password</Label>
+          <Input
+            type="password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            className="focus-visible:ring-[#4ca626]"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-[#4ca626] hover:bg-[#3e8f20]"
+        >
+          Update Password
+        </Button>
+      </form>
+    </div>
   );
 }

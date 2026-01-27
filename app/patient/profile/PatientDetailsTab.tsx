@@ -8,138 +8,159 @@ import { Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 type PatientForm = {
-  name: string;
-  age: string;
-  gender: string;
+  firstName: string;
+  lastName: string;
   phone: string;
+  gender: string;
   address: string;
+  dateOfBirth: string;
+  bloodGroup: string;
+  allergies: string;
 };
 
 export default function PatientDetailsTab() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [editingField, setEditingField] =
-    useState<keyof PatientForm | null>(null);
-
   const [patient, setPatient] = useState<PatientForm>({
-    name: "",
-    age: "",
-    gender: "",
+    firstName: "",
+    lastName: "",
     phone: "",
+    gender: "",
     address: "",
+    dateOfBirth: "",
+    bloodGroup: "",
+    allergies: "",
   });
 
-  const [originalPatient, setOriginalPatient] =
-    useState<PatientForm | null>(null);
+  const [original, setOriginal] = useState<PatientForm | null>(null);
+  const [editing, setEditing] = useState<keyof PatientForm | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await fetch("/api/patient/profile");
-        if (!res.ok) throw new Error();
-
-        const data = await res.json();
-
+    fetch("/api/patient/profile")
+      .then(res => res.json())
+      .then(data => {
         const mapped = {
-          name: data.name ?? "",
-          age: data.age ? String(data.age) : "",
-          gender: data.gender ?? "",
+          firstName: data.firstName ?? "",
+          lastName: data.lastName ?? "",
           phone: data.phone ?? "",
+          gender: data.gender ?? "",
           address: data.address ?? "",
+          dateOfBirth: data.dateOfBirth
+            ? data.dateOfBirth.split("T")[0]
+            : "",
+          bloodGroup: data.bloodGroup ?? "",
+          allergies: data.allergies?.join(", ") ?? "",
         };
-
         setPatient(mapped);
-        setOriginalPatient(mapped);
-      } catch {
-        toast.error("Failed to load profile");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProfile();
+        setOriginal(mapped);
+      })
+      .catch(() => toast.error("Failed to load profile"));
   }, []);
 
-  function handleChange(field: keyof PatientForm, value: string) {
-    setPatient(prev => ({ ...prev, [field]: value }));
-  }
-
-  async function saveField(field: keyof PatientForm) {
+  async function save(field: keyof PatientForm) {
     setSaving(true);
+
+    const value =
+      field === "allergies"
+        ? patient[field].split(",").map(a => a.trim())
+        : patient[field];
 
     const res = await fetch("/api/patient/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        field,
-        value: field === "age" ? Number(patient.age) : patient[field],
-      }),
+      body: JSON.stringify({ field, value }),
     });
 
     setSaving(false);
 
-    if (!res.ok) {
-      toast.error("Update failed");
-      return;
-    }
+    if (!res.ok) return toast.error("Update failed");
 
-    setOriginalPatient(patient);
-    setEditingField(null);
+    setOriginal(patient);
+    setEditing(null);
     toast.success("Profile updated");
   }
 
-  function cancelEdit(field: keyof PatientForm) {
-    if (!originalPatient) return;
-
-    setPatient(prev => ({
-      ...prev,
-      [field]: originalPatient[field],
-    }));
-    setEditingField(null);
+  function cancel(field: keyof PatientForm) {
+    if (!original) return;
+    setPatient(p => ({ ...p, [field]: original[field] }));
+    setEditing(null);
   }
 
-  if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading...</p>;
+  function Field({ label, field }: { label: string; field: keyof PatientForm }) {
+    return (
+      <div>
+        <Label>{label}</Label>
+        <div className="flex gap-3 mt-1">
+          <Input
+            type={field === "dateOfBirth" ? "date" : "text"}
+            value={patient[field]}
+            disabled={editing !== field}
+            onChange={e =>
+              setPatient(p => ({ ...p, [field]: e.target.value }))
+            }
+            className="focus-visible:ring-[#4ca626]"
+          />
+
+          {editing === field ? (
+            <>
+              <Button
+                size="icon"
+                className="bg-[#4ca626]"
+                onClick={() => save(field)}
+                disabled={saving}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="outline" onClick={() => cancel(field)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setEditing(field)}
+            >
+              <Pencil className="h-4 w-4 text-[#4ca626]" />
+            </Button>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
-      {(Object.keys(patient) as (keyof PatientForm)[]).map(field => (
-        <div key={field} className="space-y-1">
-          <Label className="capitalize">{field}</Label>
+    <div className="space-y-10">
+      <Section title="Personal Information">
+        <Field label="First Name" field="firstName" />
+        <Field label="Last Name" field="lastName" />
+        <Field label="Date of Birth" field="dateOfBirth" />
+        <Field label="Gender" field="gender" />
+      </Section>
 
-          <div className="flex gap-2 items-center">
-            <Input
-              value={patient[field]}
-              disabled={editingField !== field}
-              onChange={e => handleChange(field, e.target.value)}
-            />
+      <Section title="Contact Details">
+        <Field label="Phone Number" field="phone" />
+        <Field label="Address" field="address" />
+      </Section>
 
-            {editingField === field ? (
-              <>
-                <Button size="icon" onClick={() => saveField(field)} disabled={saving}>
-                  <Check className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => cancelEdit(field)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => setEditingField(field)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      ))}
+      <Section title="Medical Information">
+        <Field label="Blood Group" field="bloodGroup" />
+        <Field label="Allergies (comma separated)" field="allergies" />
+      </Section>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{children}</div>
     </div>
   );
 }
