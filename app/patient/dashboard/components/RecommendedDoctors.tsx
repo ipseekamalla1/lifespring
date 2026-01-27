@@ -66,7 +66,7 @@ export default function RecommendedDoctors({
 
                   <div>
                     <p className="font-semibold text-gray-900">
-                      Dr. {doc.name}
+                       {doc.name}
                     </p>
                     <p className="text-sm text-[#4ca626]">
                       {doc.specialization || "General Physician"}
