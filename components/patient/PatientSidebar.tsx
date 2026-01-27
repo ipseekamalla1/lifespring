@@ -54,7 +54,7 @@ export default function PatientSidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-slate-950 border-r border-slate-800 shadow-lg flex flex-col justify-between">
+    <aside className="w-64 min-h-screen bg-black border-r border-slate-800 shadow-lg flex flex-col justify-between">
       
       {/* TOP */}
       <div className="p-6 flex flex-col items-center">

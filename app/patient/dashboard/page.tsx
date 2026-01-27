@@ -34,10 +34,10 @@ type Doctor = {
   specialization?: string;
   department?: {
     name: string;
-  } | null;
+  };
   experience?: number;
+  phone?: string;
 };
-
 
 
 export default function PatientDashboard() {
