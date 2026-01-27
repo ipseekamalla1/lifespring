@@ -67,7 +67,7 @@ export async function GET() {
 ======================= */
 export async function PATCH(req: Request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get("session")?.value;
 
     if (!token) {
