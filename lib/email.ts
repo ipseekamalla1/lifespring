@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { appointmentConfirmationTemplate } from "./templates/appointmentConfirmationTemplate";
-
+import { appointmentStatusTemplate } from "./templates/appointmentStatusTemplate";
 
 export const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -104,6 +104,66 @@ export async function sendAppointmentConfirmationEmail({
       doctorName,
       date,
       pdfUrl,
+    }),
+  });
+}
+
+
+export async function sendAppointmentStatusEmail({
+  to,
+  patientName,
+  doctorName,
+  status,
+  date,
+  pdfUrl,
+}: {
+  to: string;
+  patientName: string;
+  doctorName: string;
+  status: "APPROVED" | "CANCELLED" | "COMPLETED" | "RESCHEDULED";
+  date: Date;
+  pdfUrl: string;
+}) {
+  let subject = "Appointment Update";
+  let message = "";
+
+  switch (status) {
+    case "APPROVED":
+      subject = "✅ Appointment Approved";
+      message =
+        "Good news! Your appointment has been approved. Please find the details below.";
+      break;
+
+    case "CANCELLED":
+      subject = "❌ Appointment Cancelled";
+      message =
+        "We’re sorry to inform you that your appointment has been cancelled.";
+      break;
+
+    case "RESCHEDULED":
+      subject = "🔁 Appointment Rescheduled";
+      message =
+        "Your appointment has been rescheduled. Please review the updated date and time.";
+      break;
+
+    case "COMPLETED":
+      subject = "✔ Appointment Completed";
+      message =
+        "Your appointment has been successfully completed. Thank you for choosing our service.";
+      break;
+  }
+
+  await transporter.sendMail({
+    from: `"HealthCare" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html: appointmentStatusTemplate({
+      patientName,
+      doctorName,
+      message,
+      date,
+      status,
+      pdfUrl, // ✅ IMPORTANT: pass it here
     }),
   });
 }

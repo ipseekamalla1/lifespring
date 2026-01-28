@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { sendAppointmentStatusEmail } from "@/lib/email";
 
 const ALLOWED_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED"];
 
@@ -10,7 +11,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    /* ---------- PARAMS (FIX) ---------- */
+    /* ---------- PARAMS ---------- */
     const { id } = await context.params;
 
     if (!id) {
@@ -44,11 +45,44 @@ export async function PATCH(
       );
     }
 
-    /* ---------- UPDATE ---------- */
+    /* ---------- FETCH FULL APPOINTMENT ---------- */
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        patient: {
+          include: {
+            user: true,
+          },
+        },
+        doctor: true,
+      },
+    });
+
+    if (!appointment) {
+      return NextResponse.json(
+        { error: "Appointment not found" },
+        { status: 404 }
+      );
+    }
+
+    /* ---------- UPDATE STATUS ---------- */
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
       data: { status },
     });
+
+    /* ---------- SEND STATUS EMAIL ---------- */
+const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/appointments/${updatedAppointment.id}/pdf`;
+
+await sendAppointmentStatusEmail({
+  to: appointment.patient.user.email,
+  patientName: appointment.patient.firstName, 
+  doctorName: appointment.doctor.name,
+  status,
+  date: updatedAppointment.date,
+  pdfUrl, // ✅ added
+});
+
 
     return NextResponse.json(updatedAppointment);
   } catch (error) {

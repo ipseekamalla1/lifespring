@@ -14,7 +14,8 @@ type Appointment = {
   reason: string;
   status: AppointmentStatus;
   patient: {
-    name: string | null;
+    firstName: string | null;
+    lastName: string | null;
     phone: string | null;
   };
   doctor: {
@@ -78,12 +79,14 @@ export default function AdminAppointments() {
 
     if (search) {
       const q = search.toLowerCase();
-      data = data.filter(
-        a =>
-          a.patient?.name?.toLowerCase().includes(q) ||
+      data = data.filter(a => {
+        const patientName = `${a.patient?.firstName ?? ""} ${a.patient?.lastName ?? ""}`.toLowerCase();
+        return (
+          patientName.includes(q) ||
           a.patient?.phone?.includes(q) ||
           a.doctor?.name?.toLowerCase().includes(q)
-      );
+        );
+      });
     }
 
     if (statusFilter !== "ALL") {
@@ -172,50 +175,53 @@ export default function AdminAppointments() {
           </thead>
 
           <tbody>
-            {filteredAppointments.map(appt => (
-              <tr key={appt.id} className="border-b hover:bg-emerald-50">
-                <td className="px-4 py-3 text-sm">
-                  {new Date(appt.date).toLocaleString()}
-                </td>
+            {filteredAppointments.map(appt => {
+              const patientName =
+                `${appt.patient?.firstName ?? ""} ${appt.patient?.lastName ?? ""}`.trim() || "—";
 
-                <td className="px-4 py-3 text-sm">
-                  <div className="font-medium">
-                    {appt.patient?.name || "—"}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {appt.patient?.phone || ""}
-                  </div>
-                </td>
+              return (
+                <tr key={appt.id} className="border-b hover:bg-emerald-50">
+                  <td className="px-4 py-3 text-sm">
+                    {new Date(appt.date).toLocaleString()}
+                  </td>
 
-                <td className="px-4 py-3 text-sm">
-                  <div className="font-medium">
-                    {appt.doctor?.name || "—"}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {appt.doctor?.department?.name || "—"}
-                  </div>
-                </td>
+                  <td className="px-4 py-3 text-sm">
+                    <div className="font-medium">{patientName}</div>
+                    <div className="text-xs text-gray-500">
+                      {appt.patient?.phone || ""}
+                    </div>
+                  </td>
 
-                <td className="px-4 py-3 text-sm">{appt.reason}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <div className="font-medium">
+                      {appt.doctor?.name || "—"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {appt.doctor?.department?.name || "—"}
+                    </div>
+                  </td>
 
-                <td className="px-4 py-3 text-sm">
-                  <select
-                    value={appt.status}
-                    onChange={e =>
-                      updateStatus(
-                        appt.id,
-                        e.target.value as AppointmentStatus
-                      )
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ${statusStyles[appt.status]}`}
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="CONFIRMED">CONFIRMED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-4 py-3 text-sm">{appt.reason}</td>
+
+                  <td className="px-4 py-3 text-sm">
+                    <select
+                      value={appt.status}
+                      onChange={e =>
+                        updateStatus(
+                          appt.id,
+                          e.target.value as AppointmentStatus
+                        )
+                      }
+                      className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer ${statusStyles[appt.status]}`}
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="CONFIRMED">CONFIRMED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
 
             {filteredAppointments.length === 0 && (
               <tr>
