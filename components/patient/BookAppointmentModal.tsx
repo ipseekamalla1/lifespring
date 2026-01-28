@@ -11,8 +11,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import Toast from "@/components/ui/Toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const WORK_START = 9;
 const WORK_END = 17;
@@ -44,14 +50,14 @@ export default function BookAppointmentModal({
     type: "success" | "error";
   } | null>(null);
 
-  /* ---------------- LOAD DOCTORS ---------------- */
+  /* LOAD DOCTORS */
   useEffect(() => {
     fetch("/api/patient/doctors")
       .then((r) => r.json())
       .then(setDoctors);
   }, []);
 
-  /* ---------------- FETCH BOOKED SLOTS ---------------- */
+  /* FETCH BOOKED SLOTS */
   useEffect(() => {
     if (!selectedDoctor || !date) return;
 
@@ -68,7 +74,7 @@ export default function BookAppointmentModal({
       });
   }, [selectedDoctor, date]);
 
-  /* ---------------- TIME SLOTS ---------------- */
+  /* TIME SLOTS */
   const slotsWithStatus = useMemo(() => {
     const slots = [];
     for (let h = WORK_START; h < WORK_END; h++) {
@@ -83,7 +89,7 @@ export default function BookAppointmentModal({
     return slots;
   }, [bookedSlots]);
 
-  /* ---------------- SUBMIT ---------------- */
+  /* SUBMIT */
   async function handleSubmit() {
     if (!selectedDoctor || !date || !time || !reason) return;
 
@@ -105,17 +111,28 @@ export default function BookAppointmentModal({
       return;
     }
 
-    setToast({
-      message: "Appointment booked successfully",
-      type: "success",
-    });
+    const data = await res.json();
 
-    setOpen(false);
-    setSelectedDoctor(null);
-    setDate("");
-    setTime("");
-    setReason("");
-    onSuccess();
+setToast({
+  message: "Appointment booked successfully",
+  type: "success",
+});
+
+setOpen(false);
+setSelectedDoctor(null);
+setDate("");
+setTime("");
+setReason("");
+onSuccess();
+
+// ✅ OPEN PDF IN NEW TAB USING RETURNED ID
+window.open(
+  `/api/appointments/${data.id}/pdf`,
+  "_blank"
+);
+
+setLoading(false);
+
     setLoading(false);
   }
 
@@ -139,29 +156,26 @@ export default function BookAppointmentModal({
             {/* DOCTOR */}
             <div>
               <Label>Doctor</Label>
-
-              <Card className="max-h-48 overflow-y-auto border mt-2">
-                {doctors.map((doctor) => (
-                  <div
-                    key={doctor.id}
-                    onClick={() => setSelectedDoctor(doctor)}
-                    className={`p-3 cursor-pointer border-b last:border-b-0
-                      ${
-                        selectedDoctor?.id === doctor.id
-                          ? "bg-emerald-600 text-white"
-                          : "hover:bg-emerald-50"
-                      }`}
-                  >
-                    {doctor.name}
-                  </div>
-                ))}
-              </Card>
-
-              {selectedDoctor && (
-                <p className="text-sm mt-2 text-emerald-700">
-                  Selected: {selectedDoctor.name}
-                </p>
-              )}
+              <Select
+                value={selectedDoctor?.id || ""}
+                onValueChange={(value) => {
+                  const doc = doctors.find((d) => d.id === value) || null;
+                  setSelectedDoctor(doc);
+                  setDate("");
+                  setTime("");
+                }}
+              >
+                <SelectTrigger className="mt-2 h-11 border-emerald-300">
+                  <SelectValue placeholder="Select a doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {doctors.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* DATE */}
@@ -184,15 +198,14 @@ export default function BookAppointmentModal({
                     <button
                       key={slot.time}
                       disabled={slot.booked}
-                      onClick={() => !slot.booked && setTime(slot.time)}
-                      className={`py-2 rounded border text-sm
-                        ${
-                          slot.booked
-                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                            : time === slot.time
-                            ? "bg-emerald-600 text-white"
-                            : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                        }`}
+                      onClick={() => setTime(slot.time)}
+                      className={`py-2 rounded border text-sm ${
+                        slot.booked
+                          ? "bg-gray-200 text-gray-400"
+                          : time === slot.time
+                          ? "bg-emerald-600 text-white"
+                          : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                      }`}
                     >
                       {slot.time}
                     </button>
@@ -213,7 +226,7 @@ export default function BookAppointmentModal({
             <Button
               disabled={!time || loading}
               onClick={handleSubmit}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full bg-emerald-600"
             >
               {loading ? "Booking..." : "Confirm Appointment"}
             </Button>

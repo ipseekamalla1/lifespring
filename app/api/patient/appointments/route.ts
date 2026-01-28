@@ -69,6 +69,8 @@ export async function POST(req: Request) {
       },
     });
 
+    
+
     return NextResponse.json(appointment);
   } catch (error: any) {
     // 🚨 SLOT ALREADY TAKEN
