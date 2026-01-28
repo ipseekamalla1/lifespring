@@ -32,14 +32,21 @@ export default function RecentAppointments({ appointments, onViewAll }: any) {
             </tr>
           </thead>
           <tbody>
-            {appointments.slice(0, 6).map(app => (
-              <tr key={app.id} className="border-t">
-                <td className="px-4 py-3">{app.doctor?.name || "—"}</td>
-                <td className="px-4 py-3">{formatDate(app.date)}</td>
-                <td className="px-4 py-3">{formatTime(app.date)}</td>
-                <td className="px-4 py-3">{app.status}</td>
-              </tr>
-            ))}
+           {appointments
+  .sort(
+    (a: any, b: any) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+  .slice(0, 3)
+  .map((app: any) => (
+    <tr key={app.id} className="border-t">
+      <td className="px-4 py-3">{app.doctor?.name || "—"}</td>
+      <td className="px-4 py-3">{formatDate(app.date)}</td>
+      <td className="px-4 py-3">{formatTime(app.date)}</td>
+      <td className="px-4 py-3">{app.status}</td>
+    </tr>
+))}
+
           </tbody>
         </table>
       </div>

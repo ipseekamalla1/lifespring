@@ -14,7 +14,7 @@ export function appointmentConfirmationTemplate({
     <div style="max-width:600px;margin:auto;background:#fff;border-radius:8px">
       
       <div style="background:#10b981;padding:20px;color:white;text-align:center">
-        <h2>Appointment Bookes</h2>
+        <h2>Appointment Booked</h2>
       </div>
 
       <div style="padding:24px;color:#333">
