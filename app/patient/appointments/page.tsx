@@ -13,6 +13,8 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import BookAppointmentModal from "@/components/patient/BookAppointmentModal";
+import { FileText } from "lucide-react";
+
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 
@@ -230,6 +232,22 @@ export default function PatientAppointmentsPage() {
                     View Details
                   </Button>
                 </Link>
+                {a.status === "CONFIRMED" && (
+      <Button
+        size="sm"
+        variant="outline"
+        className="border-gray-300 text-gray-700 hover:border-[#4ca626] hover:text-[#4ca626]"
+        onClick={() =>
+          window.open(
+            `/api/appointments/${a.id}/pdf`,
+            "_blank"
+          )
+        }
+      >
+        <FileText className="h-4 w-4 mr-1" />
+        PDF
+      </Button>
+    )}
               </div>
             </div>
           </div>

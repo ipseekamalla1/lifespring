@@ -1,8 +1,12 @@
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import {prisma }from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { sendAppointmentConfirmationEmail } from "@/lib/email";
 
+/* =========================
+   GET: Patient Appointments
+========================= */
 export async function GET() {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
@@ -13,7 +17,6 @@ export async function GET() {
 
   const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
-  // ✅ Find patient by userId
   const patient = await prisma.patient.findUnique({
     where: { userId: decoded.id },
   });
@@ -38,6 +41,10 @@ export async function GET() {
 
   return NextResponse.json(appointments);
 }
+
+/* =========================
+   POST: Book Appointment
+========================= */
 export async function POST(req: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get("session")?.value;
@@ -49,12 +56,31 @@ export async function POST(req: Request) {
   const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
   const body = await req.json();
 
+  // 🔹 Get logged-in user
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.id },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 401 });
+  }
+
+  // 🔹 Get patient
   const patient = await prisma.patient.findUnique({
-    where: { userId: decoded.id },
+    where: { userId: user.id },
   });
 
   if (!patient) {
     return NextResponse.json({ error: "Patient not found" }, { status: 401 });
+  }
+
+  // 🔹 Get doctor (for email)
+  const doctor = await prisma.doctor.findUnique({
+    where: { id: body.doctorId },
+  });
+
+  if (!doctor) {
+    return NextResponse.json({ error: "Doctor not found" }, { status: 404 });
   }
 
   const appointmentDate = new Date(body.date);
@@ -69,11 +95,21 @@ export async function POST(req: Request) {
       },
     });
 
-    
+    // 🔗 PDF URL
+    const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/appointments/${appointment.id}/pdf`;
+
+    // 📧 Send confirmation email
+    await sendAppointmentConfirmationEmail({
+      to: user.email,
+      patientName: user.email.split("@")[0], // or user.name if exists
+      doctorName: doctor.name,
+      date: appointment.date,
+      pdfUrl,
+    });
 
     return NextResponse.json(appointment);
   } catch (error: any) {
-    // 🚨 SLOT ALREADY TAKEN
+    // 🚨 Slot already booked
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "This time slot is already booked" },
@@ -87,4 +123,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

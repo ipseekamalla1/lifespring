@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { FileText } from "lucide-react";
+
 
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 
@@ -108,9 +110,23 @@ export default function AppointmentDetailsPage() {
           <div className="mt-2 h-1 w-14 rounded-full bg-[#4ca626]" />
         </div>
 
-        <Badge className={statusStyle[appointment.status]}>
-          {appointment.status}
-        </Badge>
+       <div className="flex items-center gap-3">
+  <Badge className={statusStyle[appointment.status]}>
+    {appointment.status}
+  </Badge>
+
+  <Button
+    variant="outline"
+    className="border-[#4ca626] text-[#4ca626] hover:bg-[#4ca626]/10"
+    onClick={() =>
+      window.open(`/api/appointments/${appointment.id}/pdf`, "_blank")
+    }
+  >
+    View PDF
+  </Button>
+</div>
+
+        
       </div>
 
       {/* DOCTOR INFO */}

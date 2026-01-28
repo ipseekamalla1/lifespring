@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import { appointmentConfirmationTemplate } from "./templates/appointmentConfirmationTemplate";
+
 
 export const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -77,5 +79,31 @@ const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify-email?toke
         </div>
       </div>
     `,
+  });
+}
+
+export async function sendAppointmentConfirmationEmail({
+  to,
+  patientName,
+  doctorName,
+  date,
+  pdfUrl,
+}: {
+  to: string;
+  patientName: string;
+  doctorName: string;
+  date: Date;
+  pdfUrl: string;
+}) {
+  await transporter.sendMail({
+    from: `"HealthCare" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "✅ Appointment Confirmed",
+    html: appointmentConfirmationTemplate({
+      patientName,
+      doctorName,
+      date,
+      pdfUrl,
+    }),
   });
 }
