@@ -2,6 +2,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { User, Droplet, Phone, MapPin } from "lucide-react";
 
+
+
+const bloodGroupMap: Record<string, string> = {
+  A_POS: "A+",
+  A_NEG: "A−",
+  B_POS: "B+",
+  B_NEG: "B−",
+  AB_POS: "AB+",
+  AB_NEG: "AB−",
+  O_POS: "O+",
+  O_NEG: "O−",
+};
+
 export default function PatientProfileCard({ patient }: { patient: any }) {
   return (
     <motion.div
@@ -28,12 +41,13 @@ export default function PatientProfileCard({ patient }: { patient: any }) {
           </div>
 
           <div className="space-y-3 text-sm text-gray-700">
-            {patient?.bloodGroup && (
-              <div className="flex gap-2">
-                <Droplet className="w-4 h-4 text-[#4ca626]" />
-                Blood Group: {patient.bloodGroup}
-              </div>
-            )}
+           {patient?.bloodGroup && (
+  <div className="flex gap-2">
+    <Droplet className="w-4 h-4 text-[#4ca626]" />
+    Blood Group: {bloodGroupMap[patient.bloodGroup] ?? patient.bloodGroup}
+  </div>
+)}
+
             {patient?.phone && (
               <div className="flex gap-2">
                 <Phone className="w-4 h-4 text-[#4ca626]" />

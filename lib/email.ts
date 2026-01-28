@@ -154,7 +154,7 @@ export async function sendAppointmentStatusEmail({
   }
 
   await transporter.sendMail({
-    from: `"HealthCare" <${process.env.EMAIL_USER}>`,
+    from: `"LifeSpring <${process.env.EMAIL_USER}>`,
     to,
     subject,
     html: appointmentStatusTemplate({

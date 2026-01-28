@@ -88,7 +88,7 @@ export function appointmentStatusTemplate({
 
       <!-- Footer -->
       <div style="background:#f0fdf4;text-align:center;padding:12px;font-size:12px;color:#555">
-        © ${new Date().getFullYear()} HealthCare System · All rights reserved
+        © ${new Date().getFullYear()} LifeSpring Clinic · All rights reserved
       </div>
 
     </div>

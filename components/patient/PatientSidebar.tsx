@@ -37,6 +37,8 @@ export default function PatientSidebar() {
   const navItem = (href: string, label: string, Icon: any) => {
     const active = pathname === href;
 
+
+    
     return (
       <Link
         href={href}
@@ -54,44 +56,41 @@ export default function PatientSidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-black border-r border-slate-800 shadow-lg flex flex-col justify-between">
-      
-      {/* TOP */}
-      <div className="p-6 flex flex-col items-center">
-        {/* COMPANY LOGO */}
-<div className="mb-4 w-24 h-24 relative rounded-full overflow-hidden border border-slate-700 bg-slate-900">
-          <Image
-            src="/images/logo2.png" 
-            alt="Company Logo"
-            fill
-            className="object-contain"
-          />
-        </div>
+  <aside className="w-64 min-h-screen bg-black border-r border-slate-800 shadow-lg flex flex-col">
+  <div className="p-6 flex flex-col items-center">
+    {/* LOGO */}
+    <div className="mb-4 w-24 h-24 relative rounded-full overflow-hidden border border-slate-700 bg-slate-900">
+      <Image
+        src="/images/logo2.png"
+        alt="Company Logo"
+        fill
+        className="object-contain"
+      />
+    </div>
 
-        {/* PATIENT NAME */}
-        <h2 className="text-white font-semibold text-lg mb-6 text-center">
-          {patient ? `${patient.firstName} ${patient.lastName}` : "Loading..."}
-        </h2>
+    {/* PATIENT NAME */}
+    <h2 className="text-white font-semibold text-lg mb-6 text-center">
+      {patient ? `${patient.firstName} ${patient.lastName}` : "Loading..."}
+    </h2>
 
-        {/* NAVIGATION */}
-        <nav className="space-y-1 w-full">
-          {navItem("/patient/dashboard", "Dashboard", Home)}
-          {navItem("/patient/appointments", "Appointments", CalendarCheck)}
-          {navItem("/patient/doctors", "Doctors", Stethoscope)}
-          {navItem("/patient/profile", "My Profile", User)}
-        </nav>
-      </div>
+    {/* NAV */}
+    <nav className="space-y-1 w-full mb-6">
+      {navItem("/patient/dashboard", "Dashboard", Home)}
+      {navItem("/patient/appointments", "Appointments", CalendarCheck)}
+      {navItem("/patient/doctors", "Doctors", Stethoscope)}
+      {navItem("/patient/profile", "My Profile", User)}
+    </nav>
 
-      {/* LOGOUT */}
-      <div className="p-6 border-t border-slate-800">
-        <Button
-          onClick={handleLogout}
-          className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
-        >
-          <LogOut size={18} />
-          Logout
-        </Button>
-      </div>
-    </aside>
+    {/* LOGOUT (NOW CLOSE TO NAV) */}
+    <Button
+      onClick={handleLogout}
+      className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
+    >
+      <LogOut size={18} />
+      Logout
+    </Button>
+  </div>
+</aside>
+
   );
 }

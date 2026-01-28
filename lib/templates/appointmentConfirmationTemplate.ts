@@ -46,7 +46,7 @@ export function appointmentConfirmationTemplate({
       </div>
 
       <div style="background:#f0fdf4;text-align:center;padding:12px;font-size:12px">
-        © ${new Date().getFullYear()} HealthCare System
+        © ${new Date().getFullYear()} LifeSpring Clinic
       </div>
     </div>
   </div>

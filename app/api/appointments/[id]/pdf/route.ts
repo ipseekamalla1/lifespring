@@ -76,7 +76,7 @@ export async function GET(
     height: 60,
   });
 
-  page.drawText("HealthCare+", {
+  page.drawText("LifeSpring", {
     x: margin + 80,
     y: height - 45,
     size: 20,
