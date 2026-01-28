@@ -105,11 +105,16 @@ export default function BookAppointmentModal({
       }),
     });
 
-    if (!res.ok) {
-      setToast({ message: "Slot already booked", type: "error" });
-      setLoading(false);
-      return;
-    }
+   if (!res.ok) {
+  const err = await res.json();
+  setToast({
+    message: err.error || "Failed to book appointment",
+    type: "error",
+  });
+  setLoading(false);
+  return;
+}
+
 
     const data = await res.json();
 

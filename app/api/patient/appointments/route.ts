@@ -59,32 +59,45 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Patient not found" }, { status: 401 });
   }
 
-  const appointmentDate = new Date(body.date);
-
   try {
     const appointment = await prisma.appointment.create({
       data: {
         patientId: patient.id,
         doctorId: body.doctorId,
-        date: appointmentDate,
+        date: new Date(body.date),
         reason: body.reason,
       },
     });
-const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/appointments/${appointment.id}/pdf`;
 
-await sendAppointmentConfirmationEmail({
-  to: user.email,
-  patientName: user.name,
-  doctorName: doctor.name,
-  date: appointment.date,
-  pdfUrl,
-});
+    // ✅ FETCH USER EMAIL
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { email: true },
+    });
 
-    
+    // ✅ FETCH DOCTOR NAME
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: body.doctorId },
+      select: { name: true },
+    });
 
-    return NextResponse.json(appointment);
+    // ✅ EMAIL MUST NOT BREAK BOOKING
+    try {
+      const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/appointments/${appointment.id}/pdf`;
+
+      await sendAppointmentConfirmationEmail({
+        to: user!.email,
+        patientName: patient.firstName ?? "Patient",
+        doctorName: doctor?.name ?? "Doctor",
+        date: appointment.date,
+        pdfUrl,
+      });
+    } catch (emailErr) {
+      console.error("Email failed:", emailErr);
+    }
+
+    return NextResponse.json(appointment, { status: 201 });
   } catch (error: any) {
-    // 🚨 SLOT ALREADY TAKEN
     if (error.code === "P2002") {
       return NextResponse.json(
         { error: "This time slot is already booked" },
