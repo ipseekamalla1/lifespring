@@ -1,3 +1,5 @@
+import { AppointmentStatus } from "@prisma/client";
+
 export function appointmentStatusTemplate({
   patientName,
   doctorName,
@@ -10,7 +12,7 @@ export function appointmentStatusTemplate({
   doctorName: string;
   message: string;
   date: Date;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+   status: AppointmentStatus;
   pdfUrl: string;
 }) {
   const statusConfig = {

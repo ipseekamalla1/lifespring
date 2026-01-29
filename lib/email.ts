@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import { appointmentConfirmationTemplate } from "./templates/appointmentConfirmationTemplate";
 import { appointmentStatusTemplate } from "./templates/appointmentStatusTemplate";
-
+import { AppointmentStatus } from "@prisma/client";
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -120,7 +120,7 @@ export async function sendAppointmentStatusEmail({
   to: string;
   patientName: string;
   doctorName: string;
-  status: "APPROVED" | "CANCELLED" | "COMPLETED" | "RESCHEDULED";
+  status: AppointmentStatus;
   date: Date;
   pdfUrl: string;
 }) {
@@ -128,29 +128,23 @@ export async function sendAppointmentStatusEmail({
   let message = "";
 
   switch (status) {
-    case "APPROVED":
-      subject = "✅ Appointment Approved";
-      message =
-        "Good news! Your appointment has been approved. Please find the details below.";
-      break;
+  case "PENDING":
+    subject = "⏳ Appointment Pending";
+    message =
+      "Your appointment request has been received and is awaiting confirmation.";
+    break;
 
-    case "CANCELLED":
-      subject = "❌ Appointment Cancelled";
-      message =
-        "We’re sorry to inform you that your appointment has been cancelled.";
-      break;
+  case "CONFIRMED":
+    subject = "✅ Appointment Approved";
+    message =
+      "Good news! Your appointment has been approved. Please find the details below.";
+    break;
 
-    case "RESCHEDULED":
-      subject = "🔁 Appointment Rescheduled";
-      message =
-        "Your appointment has been rescheduled. Please review the updated date and time.";
-      break;
-
-    case "COMPLETED":
-      subject = "✔ Appointment Completed";
-      message =
-        "Your appointment has been successfully completed. Thank you for choosing our service.";
-      break;
+  case "CANCELLED":
+    subject = "❌ Appointment Cancelled";
+    message =
+      "We’re sorry to inform you that your appointment has been cancelled.";
+    break;
   }
 
   await transporter.sendMail({
