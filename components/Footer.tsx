@@ -4,6 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
 
+const footerLinks = [
+  { label: "Home", href: "/" },
+  { label: "Services", href: "/client/services" },
+  { label: "Doctors", href: "/client/doctors" },
+  { label: "About Us", href: "/client/about" },
+  { label: "Contact Us", href: "/client/contact" },
+];
+
+
 export default function Footer() {
   return (
     <footer className="bg-[#4ca626] text-white mt-24 w-full">
@@ -53,15 +62,15 @@ export default function Footer() {
               <div className="flex items-start gap-4">
                 <MapPin size={22} />
                 <p className="leading-relaxed">
-                  Germany — <br />
-                  785 15h Street, Office 47 <br />
-                  Berlin, DE 81566
+        
+                  785 15h Street,Toronto <br />
+                  Ontario,Canada
                 </p>
               </div>
 
               <div className="flex items-center gap-4">
                 <Mail size={22} />
-                <span>info@email.com</span>
+                <span>info@lifespring.com</span>
               </div>
 
               <div className="flex items-center gap-4">
@@ -78,22 +87,21 @@ export default function Footer() {
             </h3>
 
             <ul className="space-y-5 text-lg text-white/90">
-              {["Home", "Services", "About Us", "Blog", "Contact Us"].map(
-                (item, index) => (
-                  <li key={index}>
-                    <Link
-                      href="/"
-                      className="
-                        inline-block transition-all duration-300
-                        hover:text-white hover:translate-x-1
-                      "
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                )
-              )}
-            </ul>
+  {footerLinks.map((link, index) => (
+    <li key={index}>
+      <Link
+        href={link.href}
+        className="
+          inline-block transition-all duration-300
+          hover:text-white hover:translate-x-1
+        "
+      >
+        {link.label}
+      </Link>
+    </li>
+  ))}
+</ul>
+
           </div>
 
           {/* CTA */}
@@ -108,7 +116,7 @@ export default function Footer() {
             </p>
 
             <Link
-              href="/contact"
+              href="/client/contact"
               className="
                 inline-block mt-8 px-10 py-4 rounded-full
                 bg-white text-[#4ca626] text-lg font-semibold
