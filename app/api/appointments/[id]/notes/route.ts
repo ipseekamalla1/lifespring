@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 ========================= */
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } } // App Router params
+  { params }: { params: Promise<{ id: string }> } // App Router params
 ) {
   try {
     const { id } = await params;
