@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { HeartPulse, Brain, Eye, Bone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 const departments = [
   {
@@ -24,7 +25,7 @@ const departments = [
     id: "neurology",
     title: "Neurology",
     icon: Brain,
-    image: "/images/neuro.jpg",
+    image: "/images/department/neuro.jpg",
     desc:
       "Specialized care for neurological disorders affecting the brain and nervous system.",
     points: [
@@ -38,7 +39,7 @@ const departments = [
     id: "eye",
     title: "Eye Care",
     icon: Eye,
-    image: "/images/eye.jpg",
+    image: "/images/department/eye.jpg",
     desc:
       "Complete vision care services ensuring clarity, comfort, and long-term eye health.",
     points: [
@@ -193,17 +194,19 @@ export default function DepartmentsZigZagSection() {
                           </li>
                         ))}
                       </ul>
+<Link
+  href="/client/departments"
+  className="
+    inline-block mt-11 px-8 py-3 rounded-full
+    bg-[#4ca626] text-white font-semibold
+    transition-all duration-300
+    hover:bg-emerald-600 hover:shadow-lg
+  "
+>
+  Read More
+</Link>
 
-                      <button
-                        className="
-                          mt-8 px-8 py-3 rounded-full
-                          bg-[#4ca626] text-white font-semibold
-                          transition-all duration-300
-                          hover:bg-emerald-600 hover:shadow-lg
-                        "
-                      >
-                        Read More
-                      </button>
+
                     </div>
                   </div>
                 );
