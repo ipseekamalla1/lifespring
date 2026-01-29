@@ -85,8 +85,9 @@ export async function GET(
 
 
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function PATCH(req: Request, 
+  { params }: { params: Promise<{ id: string }> }) {
+  const { id } =  await params;
   const body = await req.json();
   const { status } = body;
 
