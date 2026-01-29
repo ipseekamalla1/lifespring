@@ -12,7 +12,7 @@ export default function PatientSidebar() {
   const pathname = usePathname();
 
   // State to store patient info
-  const [patient, setPatient] = useState<{ fname: string; lname: string } | null>(null);
+  const [patient, setPatient] = useState<{ firstName: string; lastName: string } | null>(null);
 
   // Fetch patient info on mount
   useEffect(() => {
