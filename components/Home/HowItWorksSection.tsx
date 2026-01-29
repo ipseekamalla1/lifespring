@@ -132,7 +132,7 @@ export default function HowItWorksSection() {
           className="mt-20 flex justify-center"
         >
           <Link
-            href="/appointment"
+            href="/login"
             className="
               px-10 py-4 rounded-full
               bg-[#4ca626] text-white font-semibold

@@ -1,6 +1,8 @@
 "use client";
 
 import { Mail, Phone } from "lucide-react";
+import Link from "next/link";
+
 
 const doctors = [
   {
@@ -146,16 +148,19 @@ export default function DoctorsSection() {
                 </div>
 
                 {/* CTA */}
-                <button
-                  className="
-                    mt-8 w-full py-3 rounded-xl text-sm font-semibold
-                    bg-[#4ca626] text-white
-                    transition-all duration-300
-                    hover:bg-emerald-600 hover:shadow-lg
-                  "
-                >
-                  Book Appointment
-                </button>
+               <Link
+  href="/client/doctors"
+  className="
+    mt-8 block w-full text-center py-3 rounded-xl text-sm font-semibold
+    bg-[#4ca626] text-white
+    transition-all duration-300
+    hover:bg-emerald-600 hover:shadow-lg
+  "
+>
+  Book Appointment
+</Link>
+
+              
               </div>
             </div>
           ))}

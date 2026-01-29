@@ -87,7 +87,7 @@ export default function ServicesCarouselSection() {
 
           <div className="mt-8 flex justify-center gap-4">
             <Link
-              href="/services"
+              href="/client/services"
               className="
                 px-8 py-3 rounded-full bg-white text-[#4ca626]
                 font-semibold transition-all duration-300
@@ -98,7 +98,7 @@ export default function ServicesCarouselSection() {
             </Link>
 
             <Link
-              href="/appointment"
+              href="client/contact"
               className="
                 px-8 py-3 rounded-full border border-white text-white
                 font-semibold transition-all duration-300
@@ -171,7 +171,7 @@ export default function ServicesCarouselSection() {
                   </p>
 
                   <Link
-                    href="/services"
+                    href="/client/services"
                     className="
                       inline-block mt-6 text-[#4ca626] font-semibold
                       transition-all duration-300 hover:translate-x-1

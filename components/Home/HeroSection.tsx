@@ -70,7 +70,7 @@ export default function HeroSection() {
             className="mt-10"
           >
             <Link
-              href="/appointments"
+              href="/client/contact"
               className="
                 inline-flex items-center justify-center
                 rounded-full px-10 py-4

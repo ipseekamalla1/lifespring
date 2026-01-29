@@ -82,7 +82,7 @@ export default function AboutCareSection() {
               className="overflow-hidden rounded-3xl shadow-xl"
             >
               <Image
-                src="/images/doctor-potrait.jpg"
+                src="/images/about-care.jpg"
                 alt="Healthcare Professional"
                 width={400}
                 height={520}
@@ -106,7 +106,7 @@ export default function AboutCareSection() {
               className="overflow-hidden rounded-3xl shadow-xl"
             >
               <Image
-                src="/images/medical-team.jpg"
+                src="/images/department/medical-team.jpg"
                 alt="Medical Team"
                 width={500}
                 height={300}
@@ -121,7 +121,7 @@ export default function AboutCareSection() {
             </p>
 
             <Link
-              href="/about"
+              href="/client/about"
               className="
                 inline-flex items-center justify-center w-fit
                 px-8 py-3 rounded-full
