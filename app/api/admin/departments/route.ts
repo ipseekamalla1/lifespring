@@ -83,10 +83,16 @@ export async function DELETE(req: Request) {
     );
   }
 
-  // Optional safety check:
   const doctorsUsing = await prisma.doctor.findFirst({
-    where: { department: { equals: undefined } },
+    where: { departmentId: id },
   });
+
+  if (doctorsUsing) {
+    return NextResponse.json(
+      { error: "Cannot delete department. Doctors are assigned to it." },
+      { status: 400 }
+    );
+  }
 
   await prisma.department.delete({
     where: { id },
@@ -96,3 +102,4 @@ export async function DELETE(req: Request) {
     message: "Department deleted successfully",
   });
 }
+

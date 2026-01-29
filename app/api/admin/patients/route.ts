@@ -7,25 +7,37 @@ import bcrypt from "bcryptjs";
 const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 const isValidPhone = (phone: string) => /^[0-9]{7,15}$/.test(phone);
 
-/* ---------------- GET ALL ---------------- */
+/* ---------------- GET ALL PATIENTS ---------------- */
 
 export async function GET() {
   const patients = await prisma.patient.findMany({
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   return NextResponse.json(patients);
 }
 
-/* ---------------- CREATE ---------------- */
+/* ---------------- CREATE PATIENT ---------------- */
 
 export async function POST(req: Request) {
-  const { name, email, age, gender, address, phone } = await req.json();
+  const {
+    firstName,
+    lastName,
+    email,
+    dateOfBirth,
+    gender,
+    address,
+    phone,
+  } = await req.json();
 
-  if (!name || !email || !phone) {
+  if (!firstName || !email || !phone) {
     return NextResponse.json(
-      { error: "Name, Email, Phone required" },
+      { error: "First name, email, and phone are required" },
       { status: 400 }
     );
   }
@@ -37,7 +49,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const exists = await prisma.user.findUnique({ where: { email } });
+  const exists = await prisma.user.findUnique({
+    where: { email },
+  });
+
   if (exists) {
     return NextResponse.json(
       { error: "Email already exists" },
@@ -46,37 +61,51 @@ export async function POST(req: Request) {
   }
 
   const tempPassword = "patient123";
-  const hashed = await bcrypt.hash(tempPassword, 10);
+  const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
   const user = await prisma.user.create({
     data: {
       email,
-      password: hashed,
+      password: hashedPassword,
       role: "PATIENT",
       patient: {
         create: {
-          name,
-          age: age ? Number(age) : null,
+          firstName,
+          lastName: lastName || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
           gender,
           address,
           phone,
         },
       },
     },
-    include: { patient: true },
+    include: {
+      patient: true,
+    },
   });
 
-  return NextResponse.json({ message: "Patient created", user });
+  return NextResponse.json({
+    message: "Patient created successfully",
+    user,
+  });
 }
 
-/* ---------------- UPDATE ---------------- */
+/* ---------------- UPDATE PATIENT ---------------- */
 
 export async function PUT(req: Request) {
-  const { id, name, age, gender, address, phone } = await req.json();
+  const {
+    id,
+    firstName,
+    lastName,
+    dateOfBirth,
+    gender,
+    address,
+    phone,
+  } = await req.json();
 
-  if (!id || !name || !phone) {
+  if (!id || !firstName || !phone) {
     return NextResponse.json(
-      { error: "Missing required fields" },
+      { error: "Patient id, first name, and phone are required" },
       { status: 400 }
     );
   }
@@ -84,24 +113,42 @@ export async function PUT(req: Request) {
   const patient = await prisma.patient.update({
     where: { id },
     data: {
-      name,
-      age: age ? Number(age) : null,
+      firstName,
+      lastName: lastName || null,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       gender,
       address,
       phone,
     },
   });
 
-  return NextResponse.json({ message: "Updated", patient });
+  return NextResponse.json({
+    message: "Patient updated successfully",
+    patient,
+  });
 }
 
-/* ---------------- DELETE ---------------- */
+/* ---------------- DELETE PATIENT ---------------- */
 
 export async function DELETE(req: Request) {
   const { id } = await req.json();
 
-  const patient = await prisma.patient.delete({ where: { id } });
-  await prisma.user.delete({ where: { id: patient.userId } });
+  if (!id) {
+    return NextResponse.json(
+      { error: "Patient id is required" },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json({ message: "Deleted" });
+  const patient = await prisma.patient.delete({
+    where: { id },
+  });
+
+  await prisma.user.delete({
+    where: { id: patient.userId },
+  });
+
+  return NextResponse.json({
+    message: "Patient deleted successfully",
+  });
 }

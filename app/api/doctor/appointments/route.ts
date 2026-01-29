@@ -35,7 +35,8 @@ export async function GET(req: Request) {
       include: {
         patient: {
           select: {
-            name: true,
+            firstName: true,
+        lastName: true,
             phone: true,
           },
         },

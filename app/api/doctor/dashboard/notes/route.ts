@@ -40,7 +40,8 @@ export async function GET() {
         appointment: {
           include: {
             patient: {
-              select: { name: true },
+              select: { firstName: true,
+    lastName: true, },
             },
           },
         },
@@ -53,7 +54,7 @@ export async function GET() {
         note: n.note,
         createdAt: n.createdAt,
         appointmentId: n.appointmentId,
-        patientName: n.appointment.patient?.name ?? "Unknown",
+        patientName: n.appointment.patient?.firstName ?? "Unknown",
       }))
     );
   } catch (error) {

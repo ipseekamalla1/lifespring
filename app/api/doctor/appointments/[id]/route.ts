@@ -62,7 +62,8 @@ export async function GET(
       include: {
         patient: {
           select: {
-            name: true,
+           firstName: true,
+    lastName: true,
             phone: true,
           },
         },

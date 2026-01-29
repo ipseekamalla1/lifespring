@@ -40,7 +40,7 @@ export async function GET() {
   return NextResponse.json({
     id: doctor.id,
     name: doctor.name,
-    department: doctor.department,
+    departmentId: doctor.departmentId || null,
     specialization: doctor.specialization,
     phone: doctor.phone,
     experience: doctor.experience,

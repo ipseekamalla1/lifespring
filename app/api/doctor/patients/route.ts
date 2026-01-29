@@ -52,7 +52,7 @@ export async function GET() {
           },
         },
       },
-      orderBy: { name: "asc" },
+      orderBy: { firstName: "asc" },
     });
 
     return NextResponse.json(patients);

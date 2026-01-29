@@ -246,10 +246,19 @@ export async function GET(
 
   const bytes = await pdf.save();
 
-  return new NextResponse(bytes, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "inline; filename=appointment.pdf",
-    },
-  });
+const stream = new ReadableStream({
+  start(controller) {
+    controller.enqueue(bytes);
+    controller.close();
+  },
+});
+
+return new NextResponse(stream, {
+  headers: {
+    "Content-Type": "application/pdf",
+    "Content-Disposition": "inline; filename=appointment.pdf",
+  },
+});
+
+
 }
