@@ -76,8 +76,8 @@ const pdfUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/appointments/${updatedApp
 
 await sendAppointmentStatusEmail({
   to: appointment.patient.user.email,
-  patientName: appointment.patient.firstName, 
-  doctorName: appointment.doctor.name,
+  patientName: appointment.patient.firstName?? "Patient", 
+  doctorName: appointment.doctor.name ?? "Doctor",
   status,
   date: updatedAppointment.date,
   pdfUrl, // ✅ added

@@ -14,6 +14,7 @@ const options = [
     button: "Call Now",
     icon: Phone,
     image: "/images/contact/phone.jpg",
+    action: "tel:+18408412569",
   },
   {
     id: "virtual",
@@ -23,6 +24,7 @@ const options = [
     button: "Start Virtual Visit",
     icon: Video,
     image: "/images/contact/virtual.jpg",
+    action: "mailto:info@lifespring.com",
   },
   {
     id: "visit",
@@ -32,6 +34,7 @@ const options = [
     button: "Book Appointment",
     icon: Calendar,
     image: "/images/contact/visit.jpg",
+    action: "/login",
   },
 ];
 
@@ -54,7 +57,7 @@ export default function ContactOptionsSection() {
                 transition={{ duration: 0.45, ease: "easeInOut" }}
                 className="relative overflow-hidden rounded-2xl shadow-xl border border-[#4ca626]/20 bg-white cursor-pointer"
               >
-                {/* IMAGE (STABLE SIZE) */}
+                {/* IMAGE */}
                 <div className="relative w-full h-full overflow-hidden">
                   <Image
                     src={item.image}
@@ -103,9 +106,13 @@ export default function ContactOptionsSection() {
                       {item.desc}
                     </p>
 
-                    <button className="self-start px-6 py-3 bg-[#4ca626] text-white text-sm rounded-lg hover:bg-[#3f8f1f] transition">
+                    <a
+                      href={item.action}
+                      aria-label={item.button}
+                      className="inline-block self-start px-6 py-3 bg-[#4ca626] text-white text-sm font-semibold rounded-lg hover:bg-[#3f8f1f] transition"
+                    >
                       {item.button}
-                    </button>
+                    </a>
                   </motion.div>
                 )}
               </motion.div>
