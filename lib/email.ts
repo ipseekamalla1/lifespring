@@ -179,18 +179,74 @@ export async function sendResetPasswordEmail({
     },
   });
 
+
+
   await transporter.sendMail({
-    from: `"LifeSpring" <${process.env.EMAIL_USER}>`,
+    from: `"LifeSpring Healthcare" <${process.env.EMAIL_USER}>`,
     to,
-    subject: "Reset your password",
+    subject: "Reset your LifeSpring password",
     html: `
-      <p>You requested a password reset.</p>
-      <p>
-        <a href="${resetUrl}" target="_blank">
-          Click here to reset your password
-        </a>
-      </p>
-      <p>This link expires in 30 minutes.</p>
+      <div style="background-color:#f4f6f8;padding:40px 0;font-family:Arial,Helvetica,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Header -->
+          <div style="background:#0f766e;padding:24px;text-align:center;">
+            <img 
+              src="https://your-domain.com/logo.png"
+              alt="LifeSpring Logo"
+              style="height:50px;margin-bottom:10px;"
+            />
+            <h1 style="color:#ffffff;margin:0;font-size:22px;">
+              LifeSpring Healthcare
+            </h1>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:32px;color:#333;">
+            <h2 style="margin-top:0;color:#0f766e;">
+              Reset your password
+            </h2>
+
+            <p style="font-size:15px;line-height:1.6;">
+              We received a request to reset your LifeSpring account password.
+              Click the button below to continue.
+            </p>
+
+            <div style="text-align:center;margin:30px 0;">
+              <a
+                href="${resetUrl}"
+                target="_blank"
+                style="
+                  background:#0f766e;
+                  color:#ffffff;
+                  padding:14px 28px;
+                  text-decoration:none;
+                  font-weight:bold;
+                  border-radius:6px;
+                  display:inline-block;
+                "
+              >
+                Reset Password
+              </a>
+            </div>
+
+            <p style="font-size:14px;color:#555;">
+              This link will expire in <strong>30 minutes</strong>.
+            </p>
+
+            <p style="font-size:14px;color:#555;">
+              If you didn’t request this, you can safely ignore this email.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#f0fdfa;padding:16px;text-align:center;font-size:12px;color:#666;">
+            © ${new Date().getFullYear()} LifeSpring Healthcare<br />
+            Caring for you, always.
+          </div>
+        </div>
+      </div>
     `,
   });
 }
+

@@ -6,7 +6,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
+    <div className="flex bg-gradient-to-b min-h-screen">
       <Sidebar />
       <main className="flex-1 p-6">
         {children}

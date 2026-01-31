@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 
 type Patient = {
   id: string;
-  name: string;
-  age: number | null;
+  firstName: string;
+  lastName?: string | null;
+  dateOfBirth?: string | null; // ISO string
   gender: string | null;
   address: string | null;
   phone: string;
@@ -24,9 +25,10 @@ const PAGE_SIZE = 10;
 
 const emptyForm = {
   id: "",
-  name: "",
+  firstName: "",
+  lastName: "",
   email: "",
-  age: "",
+  dateOfBirth: "",
   gender: "",
   address: "",
   phone: "",
@@ -57,6 +59,17 @@ function Toast({
     </div>
   );
 }
+
+/* ================= HELPER ================= */
+
+// Calculate age from dateOfBirth
+const getAge = (dob?: string | null) => {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  const diff = Date.now() - birth.getTime();
+  const age = new Date(diff).getUTCFullYear() - 1970;
+  return age;
+};
 
 /* ================= COMPONENT ================= */
 
@@ -128,11 +141,12 @@ export default function PatientsPage() {
     setIsEdit(true);
     setForm({
       id: p.id,
-      name: p.name,
+      firstName: p.firstName,
+      lastName: p.lastName || "",
       email: p.user.email,
-      age: p.age ?? "",
-      gender: p.gender ?? "",
-      address: p.address ?? "",
+      dateOfBirth: p.dateOfBirth ? p.dateOfBirth.split("T")[0] : "",
+      gender: p.gender || "",
+      address: p.address || "",
       phone: p.phone,
     });
     setOpen(true);
@@ -144,27 +158,27 @@ export default function PatientsPage() {
     const q = search.toLowerCase();
 
     const matchesSearch =
-      p.name.toLowerCase().includes(q) ||
-      p.user.email.toLowerCase().includes(q) ||
-      p.phone.includes(q);
+      (p.firstName?.toLowerCase().includes(q) ?? false) ||
+      (p.lastName?.toLowerCase().includes(q) ?? false) ||
+      (p.user?.email?.toLowerCase().includes(q) ?? false) ||
+      (p.phone?.includes(q) ?? false);
 
     const matchesGender = genderFilter ? p.gender === genderFilter : true;
 
+    const age = getAge(p.dateOfBirth);
+
     const matchesAge =
       !ageFilter ||
-      (ageFilter === "0-18" && p.age !== null && p.age <= 18) ||
-      (ageFilter === "19-40" && p.age !== null && p.age >= 19 && p.age <= 40) ||
-      (ageFilter === "41-60" && p.age !== null && p.age >= 41 && p.age <= 60) ||
-      (ageFilter === "60+" && p.age !== null && p.age > 60);
+      (ageFilter === "0-18" && age !== null && age <= 18) ||
+      (ageFilter === "19-40" && age !== null && age >= 19 && age <= 40) ||
+      (ageFilter === "41-60" && age !== null && age >= 41 && age <= 60) ||
+      (ageFilter === "60+" && age !== null && age > 60);
 
     return matchesSearch && matchesGender && matchesAge;
   });
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   /* ================= UI ================= */
 
@@ -251,9 +265,9 @@ export default function PatientsPage() {
             <tbody>
               {paginated.map((p) => (
                 <tr key={p.id} className="border-t hover:bg-emerald-50">
-                  <td className="p-4">{p.name}</td>
+                  <td className="p-4">{p.firstName} {p.lastName || ""}</td>
                   <td className="p-4">{p.user.email}</td>
-                  <td className="p-4">{p.age ?? "-"}</td>
+                  <td className="p-4">{getAge(p.dateOfBirth) ?? "-"}</td>
                   <td className="p-4">{p.phone}</td>
                   <td className="p-4 flex justify-center gap-2">
                     <Link href={`/admin/patients/${p.id}`} className="p-2 hover:bg-emerald-100 rounded">
@@ -281,78 +295,61 @@ export default function PatientsPage() {
       </div>
 
       {/* Modal */}
-{open && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
 
-      {/* Header */}
-      <div className="border-b px-6 py-4">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {isEdit ? "Edit Patient" : "Add New Patient"}
-        </h2>
-        <p className="text-sm text-gray-500">
-          {isEdit
-            ? "Update patient information below"
-            : "Fill in the patient details"}
-        </p>
-      </div>
+            {/* Header */}
+            <div className="border-b px-6 py-4">
+              <h2 className="text-lg font-semibold text-gray-800">
+                {isEdit ? "Edit Patient" : "Add New Patient"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {isEdit ? "Update patient information below" : "Fill in the patient details"}
+              </p>
+            </div>
 
-      {/* Body */}
-      <div className="space-y-4 px-6 py-5">
-        {/* Text Fields */}
-        {["name", "email", "age", "phone", "address"].map((f) => (
-          <div key={f} className="space-y-1">
-            <label className="text-sm font-medium capitalize text-gray-700">
-              {f}
-            </label>
-            <input
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
-              placeholder={`Enter ${f}`}
-              value={form[f]}
-              disabled={isEdit && f === "email"}
-              onChange={(e) =>
-                setForm({ ...form, [f]: e.target.value })
-              }
-            />
+            {/* Body */}
+            <div className="space-y-4 px-6 py-5">
+              {["firstName", "lastName", "email", "dateOfBirth", "phone", "address"].map((f) => (
+                <div key={f} className="space-y-1">
+                  <label className="text-sm font-medium capitalize text-gray-700">
+                    {f === "dateOfBirth" ? "Date of Birth" : f}
+                  </label>
+                  <input
+                    type={f === "dateOfBirth" ? "date" : "text"}
+                    className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
+                    placeholder={`Enter ${f}`}
+                    value={form[f]}
+                    disabled={isEdit && f === "email"}
+                    onChange={(e) => setForm({ ...form, [f]: e.target.value })}
+                  />
+                </div>
+              ))}
+
+              {/* Gender */}
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700">Gender</label>
+                <select
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                >
+                  <option value="">Select gender</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSubmit}>{isEdit ? "Update Patient" : "Create Patient"}</Button>
+            </div>
           </div>
-        ))}
-
-        {/* Gender */}
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-gray-700">
-            Gender
-          </label>
-          <select
-            className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            value={form.gender}
-            onChange={(e) =>
-              setForm({ ...form, gender: e.target.value })
-            }
-          >
-            <option value="">Select gender</option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-          </select>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
-        <Button
-          variant="outline"
-          onClick={() => setOpen(false)}
-        >
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit}>
-          {isEdit ? "Update Patient" : "Create Patient"}
-        </Button>
-      </div>
-
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   );
 }

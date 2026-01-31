@@ -67,7 +67,7 @@ export default function PatientProfilePage() {
   };
 
   return (
-    <div className="p-8 space-y-8 bg-gradient-to-br from-emerald-50 to-white min-h-screen">
+    <div className="p-8 space-y-8 bg-gradient-to-b min-h-screen">
       {/* ================= PATIENT PROFILE CARD ================= */}
       <Card className="rounded-3xl shadow-xl">
         <CardContent className="p-8 grid md:grid-cols-3 gap-6">
