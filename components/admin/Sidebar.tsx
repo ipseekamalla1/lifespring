@@ -44,47 +44,48 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-black border-r border-slate-800 shadow-lg flex flex-col justify-between">
-      {/* TOP */}
-      <div className="p-6 flex flex-col items-center">
-        {/* LOGO */}
-        <div className="mb-4 w-24 h-24 relative rounded-full overflow-hidden border border-slate-700 bg-slate-900">
-          <Image
-            src="/images/logo2.png"
-            alt="Company Logo"
-            fill
-            className="object-contain"
-          />
-        </div>
+   <aside className="w-64 min-h-screen bg-black border-r border-slate-800 shadow-lg flex flex-col">
+  {/* TOP */}
+  <div className="p-6 flex flex-col items-center">
+    {/* LOGO */}
+    <div className="mb-4 w-24 h-24 relative rounded-full overflow-hidden border border-slate-700 bg-slate-900">
+      <Image
+        src="/images/logo2.png"
+        alt="Company Logo"
+        fill
+        className="object-contain"
+      />
+    </div>
 
-        {/* PANEL TITLE */}
-        <h1 className="text-white font-bold text-lg mb-6 text-center">
-          Admin Panel
-        </h1>
+    {/* PANEL TITLE */}
+    <h1 className="text-white font-bold text-lg mb-6 text-center">
+      Admin Panel
+    </h1>
 
-        {/* NAV */}
-        <nav className="space-y-1 w-full">
-          {navItem("/admin/dashboard", "Dashboard", Home)}
-          {navItem("/admin/doctors", "Doctors", Stethoscope)}
-          {navItem("/admin/patients", "Patients", Users)}
-          {navItem("/admin/appointments", "Appointments", CalendarCheck)}
-          {navItem("/admin/departments", "Departments", Building2)}
-          {navItem("/admin/users", "Users", User)}
-          {navItem("/admin/reports", "Reports", BarChart3)}
-          {navItem("/admin/settings", "Settings", Settings)}
-        </nav>
-      </div>
+    {/* NAV */}
+    <nav className="space-y-1 w-full">
+      {navItem("/admin/dashboard", "Dashboard", Home)}
+      {navItem("/admin/doctors", "Doctors", Stethoscope)}
+      {navItem("/admin/patients", "Patients", Users)}
+      {navItem("/admin/appointments", "Appointments", CalendarCheck)}
+      {navItem("/admin/departments", "Departments", Building2)}
+      {navItem("/admin/users", "Users", User)}
+      {navItem("/admin/reports", "Reports", BarChart3)}
+      {navItem("/admin/settings", "Settings", Settings)}
+    </nav>
+  </div>
 
-      {/* LOGOUT */}
-      <div className="p-6">
-        <Button
-          onClick={handleLogout}
-          className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
-        >
-          <LogOut size={18} />
-          Logout
-        </Button>
-      </div>
-    </aside>
+  {/* LOGOUT pinned at bottom */}
+  <div className="p-6 mt-auto">
+    <Button
+      onClick={handleLogout}
+      className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
+    >
+      <LogOut size={18} />
+      Logout
+    </Button>
+  </div>
+</aside>
+
   );
 }

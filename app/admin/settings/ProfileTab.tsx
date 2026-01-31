@@ -23,8 +23,8 @@ function Toast({
 
   return (
     <div
-      className={`fixed top-6 right-6 z-50 px-4 py-2 rounded text-white shadow
-        ${type === "success" ? "bg-green-600" : "bg-red-600"}`}
+      className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl text-white shadow-lg
+        ${type === "success" ? "bg-[#4ca626]" : "bg-red-600"}`}
     >
       {message}
     </div>
@@ -62,17 +62,14 @@ export default function ProfileTab() {
   /* ---------- UPDATE EMAIL ---------- */
   async function saveEmail() {
     setSavingEmail(true);
-
     try {
       const res = await fetch("/api/admin/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
       setToast({ message: "Email updated successfully", type: "success" });
     } catch (err: any) {
       setToast({ message: err.message, type: "error" });
@@ -84,14 +81,12 @@ export default function ProfileTab() {
   /* ---------- CHANGE PASSWORD ---------- */
   async function changePassword() {
     setSavingPassword(true);
-
     try {
       const res = await fetch("/api/admin/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
@@ -105,7 +100,8 @@ export default function ProfileTab() {
     }
   }
 
-  if (loading) return <p className="p-6">Loading...</p>;
+  if (loading)
+    return <p className="p-6 text-[#4ca626] font-medium">Loading profile…</p>;
 
   return (
     <>
@@ -117,26 +113,32 @@ export default function ProfileTab() {
         />
       )}
 
-      <Card>
+      <Card className="rounded-2xl shadow-sm">
         <CardContent className="p-6 space-y-8">
-          <h2 className="text-lg font-semibold">Admin Profile</h2>
+          <h2 className="text-xl font-semibold text-[#4ca626]">
+            Admin Profile
+          </h2>
 
           {/* EMAIL */}
-          <div className="space-y-2 max-w-md">
+          <div className="space-y-3 max-w-md">
             <Label>Email</Label>
             <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             <div className="flex justify-end">
-              <Button onClick={saveEmail} disabled={savingEmail}>
+              <Button
+                onClick={saveEmail}
+                disabled={savingEmail}
+                className="bg-[#4ca626] hover:bg-[#3f961f] text-white"
+              >
                 {savingEmail ? "Saving..." : "Save Email"}
               </Button>
             </div>
           </div>
 
-          <hr />
+          <hr className="border-gray-200" />
 
           {/* PASSWORD */}
           <div className="space-y-4 max-w-md">
-            <h3 className="font-medium">Change Password</h3>
+            <h3 className="font-medium text-gray-700">Change Password</h3>
 
             <div className="space-y-2">
               <Label>Current Password</Label>
@@ -157,7 +159,11 @@ export default function ProfileTab() {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={changePassword} disabled={savingPassword}>
+              <Button
+                onClick={changePassword}
+                disabled={savingPassword}
+                className="bg-[#4ca626] hover:bg-[#3f961f] text-white"
+              >
                 {savingPassword ? "Updating..." : "Change Password"}
               </Button>
             </div>

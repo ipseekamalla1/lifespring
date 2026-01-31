@@ -14,7 +14,6 @@ import {
   LineChart,
   Line,
 } from "recharts";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { FileBarChart } from "lucide-react";
 
@@ -29,28 +28,25 @@ export default function ReportsPage() {
       .then(setData);
   }, []);
 
-  if (!data) return <p>Loading reports...</p>;
+  if (!data)
+    return <p className="p-6 text-[#4ca626] font-medium">Loading reports…</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 min-h-screen bg-white">
+
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold text-emerald-800">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-semibold text-[#4ca626]">
           Reports & Analytics
         </h1>
-        <p className="text-sm text-gray-500">
-          Real-time hospital insights
-        </p>
+        <p className="text-sm text-gray-500">Real-time hospital insights</p>
       </div>
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard title="Total Doctors" value={data.kpis.totalDoctors} />
         <StatCard title="Total Patients" value={data.kpis.totalPatients} />
-        <StatCard
-          title="Total Appointments"
-          value={data.kpis.totalAppointments}
-        />
+        <StatCard title="Total Appointments" value={data.kpis.totalAppointments} />
       </div>
 
       {/* PIE + BAR */}
@@ -58,7 +54,7 @@ export default function ReportsPage() {
         {/* PIE */}
         <Card className="rounded-2xl">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg font-semibold mb-4 text-[#4ca626]">
               Appointment Status
             </h2>
 
@@ -72,7 +68,7 @@ export default function ReportsPage() {
                   label
                 >
                   {data.appointmentStatus.map((_: any, i: number) => (
-                    <Cell key={i} fill={COLORS[i]} />
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -84,7 +80,7 @@ export default function ReportsPage() {
         {/* BAR */}
         <Card className="rounded-2xl">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">
+            <h2 className="text-lg font-semibold mb-4 text-[#4ca626]">
               Users Overview
             </h2>
 
@@ -93,7 +89,7 @@ export default function ReportsPage() {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="#4ca626" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -103,7 +99,7 @@ export default function ReportsPage() {
       {/* LINE */}
       <Card className="rounded-2xl">
         <CardContent className="p-6">
-          <h2 className="text-lg font-semibold mb-4">
+          <h2 className="text-lg font-semibold mb-4 text-[#4ca626]">
             Appointment Trend
           </h2>
 
@@ -115,7 +111,7 @@ export default function ReportsPage() {
               <Line
                 type="monotone"
                 dataKey="appointments"
-                stroke="#10b981"
+                stroke="#4ca626"
                 strokeWidth={3}
               />
             </LineChart>
@@ -126,16 +122,16 @@ export default function ReportsPage() {
   );
 }
 
-/* ===== SMALL CARD ===== */
+/* ===== KPI CARD ===== */
 function StatCard({ title, value }: any) {
   return (
-    <Card className="rounded-2xl">
+    <Card className="rounded-2xl shadow-sm">
       <CardContent className="p-5 space-y-2">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500">{title}</p>
-          <FileBarChart size={18} className="text-emerald-600" />
+          <FileBarChart size={18} className="text-[#4ca626]" />
         </div>
-        <h2 className="text-3xl font-bold">{value}</h2>
+        <h2 className="text-3xl font-bold text-[#4ca626]">{value}</h2>
       </CardContent>
     </Card>
   );

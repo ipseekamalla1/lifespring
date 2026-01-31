@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Plus, Pencil, Trash2, Filter } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Eye, Plus, Pencil, Trash2, X, Filter } from "lucide-react";
+import Toast from "../../../components/ui/Toast";
 
 /* ================= TYPES ================= */
 
@@ -13,15 +12,11 @@ type Patient = {
   firstName: string;
   lastName?: string | null;
   dateOfBirth?: string | null; // ISO string
-  gender: string | null;
-  address: string | null;
+  gender?: string | null;
+  address?: string | null;
   phone: string;
   user: { email: string };
 };
-
-/* ================= CONSTANTS ================= */
-
-const PAGE_SIZE = 10;
 
 const emptyForm = {
   id: "",
@@ -34,37 +29,10 @@ const emptyForm = {
   phone: "",
 };
 
-/* ================= TOAST ================= */
-
-function Toast({
-  message,
-  type,
-  onClose,
-}: {
-  message: string;
-  type: "success" | "error";
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <div
-      className={`fixed top-6 right-6 z-50 px-4 py-2 rounded text-white shadow
-        ${type === "success" ? "bg-emerald-600" : "bg-red-600"}`}
-    >
-      {message}
-    </div>
-  );
-}
-
 /* ================= HELPER ================= */
 
-// Calculate age from dateOfBirth
 const getAge = (dob?: string | null) => {
-  if (!dob) return null;
+  if (!dob) return "-";
   const birth = new Date(dob);
   const diff = Date.now() - birth.getTime();
   const age = new Date(diff).getUTCFullYear() - 1970;
@@ -79,61 +47,75 @@ export default function PatientsPage() {
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState<any>(emptyForm);
 
-  const [toast, setToast] = useState<{ msg: string; type: any } | null>(null);
-
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [genderFilter, setGenderFilter] = useState("");
-  const [ageFilter, setAgeFilter] = useState("");
+  const [genderFilter, setGenderFilter] = useState<"" | "MALE" | "FEMALE">("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  const [page, setPage] = useState(1);
-
-  /* ================= DATA ================= */
+  /* ================= LOAD DATA ================= */
 
   const loadPatients = async () => {
-    const res = await fetch("/api/admin/patients");
-    const data = await res.json();
-    setPatients(Array.isArray(data) ? data : []);
+    try {
+      const res = await fetch("/api/admin/patients");
+      const data = await res.json();
+      setPatients(Array.isArray(data) ? data : []);
+    } catch {
+      setPatients([]);
+    }
   };
 
   useEffect(() => {
     loadPatients();
   }, []);
 
-  /* ================= CRUD ================= */
+  /* ================= ACTIONS ================= */
 
   const handleSubmit = async () => {
-    const res = await fetch("/api/admin/patients", {
-      method: isEdit ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch("/api/admin/patients", {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
-      setToast({ msg: isEdit ? "Patient updated" : "Patient created", type: "success" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setToast({ message: data.error || "Operation failed", type: "error" });
+        return;
+      }
+
+      setToast({ message: isEdit ? "Patient updated" : "Patient created", type: "success" });
       setOpen(false);
       setForm(emptyForm);
       setIsEdit(false);
       loadPatients();
-    } else {
-      setToast({ msg: "Operation failed", type: "error" });
+    } catch {
+      setToast({ message: "Server error", type: "error" });
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this patient?")) return;
 
-    const res = await fetch("/api/admin/patients", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/admin/patients", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
 
-    if (res.ok) {
-      setToast({ msg: "Patient deleted", type: "success" });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setToast({ message: data.error || "Delete failed", type: "error" });
+        return;
+      }
+
+      setToast({ message: "Patient deleted", type: "success" });
       loadPatients();
-    } else {
-      setToast({ msg: "Delete failed", type: "error" });
+    } catch {
+      setToast({ message: "Delete failed", type: "error" });
     }
   };
 
@@ -152,201 +134,194 @@ export default function PatientsPage() {
     setOpen(true);
   };
 
-  /* ================= FILTERING ================= */
+  /* ================= FILTER ================= */
 
-  const filtered = patients.filter((p) => {
-    const q = search.toLowerCase();
-
-    const matchesSearch =
-      (p.firstName?.toLowerCase().includes(q) ?? false) ||
-      (p.lastName?.toLowerCase().includes(q) ?? false) ||
-      (p.user?.email?.toLowerCase().includes(q) ?? false) ||
-      (p.phone?.includes(q) ?? false);
-
-    const matchesGender = genderFilter ? p.gender === genderFilter : true;
-
-    const age = getAge(p.dateOfBirth);
-
-    const matchesAge =
-      !ageFilter ||
-      (ageFilter === "0-18" && age !== null && age <= 18) ||
-      (ageFilter === "19-40" && age !== null && age >= 19 && age <= 40) ||
-      (ageFilter === "41-60" && age !== null && age >= 41 && age <= 60) ||
-      (ageFilter === "60+" && age !== null && age > 60);
-
-    return matchesSearch && matchesGender && matchesAge;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filteredPatients = patients
+    .filter((p) => {
+      const q = search.toLowerCase();
+      return (
+        p.firstName.toLowerCase().includes(q) ||
+        (p.lastName?.toLowerCase().includes(q) ?? false) ||
+        p.user.email.toLowerCase().includes(q) ||
+        p.phone.includes(q)
+      );
+    })
+    .filter((p) => (genderFilter ? p.gender === genderFilter : true));
 
   /* ================= UI ================= */
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-emerald-50 via-white to-green-50 min-h-screen">
+    <div className="p-6 space-y-6 min-h-screen bg-white">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {toast && (
-        <Toast
-          message={toast.msg}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-emerald-800">Patients</h1>
+        <h1 className="text-3xl font-semibold text-[#4ca626]">Patients</h1>
+
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-            <Filter size={16} className="mr-2" />
-            Filters
-          </Button>
-          <Button
-            className="bg-emerald-600"
-            onClick={() => {
-              setForm(emptyForm);
-              setIsEdit(false);
-              setOpen(true);
-            }}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="border px-4 py-2 rounded-lg bg-white hover:bg-green-50 transition"
           >
-            <Plus size={18} className="mr-2" /> Add Patient
-          </Button>
+            <Filter size={16} />
+          </button>
+
+          <button
+            onClick={() => { setForm(emptyForm); setIsEdit(false); setOpen(true); }}
+            className="flex items-center gap-2 bg-[#4ca626] text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            <Plus size={18} /> Add Patient
+          </button>
         </div>
       </div>
 
-      {/* Search */}
+      {/* SEARCH */}
       <input
-        className="px-4 py-2 border rounded-lg w-64"
         placeholder="Search patients..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        className="px-4 py-2 border rounded-lg w-72 focus:ring-2 focus:ring-[#4ca626] outline-none"
       />
 
-      {/* Filters */}
+      {/* FILTERS */}
       {showFilters && (
-        <Card className="p-4 flex gap-4">
+        <div className="flex gap-4 bg-white p-4 border rounded-lg w-fit">
           <select
-            className="border p-2 rounded"
             value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
+            onChange={(e) => setGenderFilter(e.target.value as "" | "MALE" | "FEMALE")}
+            className="border px-3 py-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none"
           >
             <option value="">All Genders</option>
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
           </select>
 
-          <select
-            className="border p-2 rounded"
-            value={ageFilter}
-            onChange={(e) => setAgeFilter(e.target.value)}
+          <button
+            onClick={() => { setSearch(""); setGenderFilter(""); }}
+            className="px-4 py-2 border rounded-lg text-sm hover:bg-green-50 transition"
           >
-            <option value="">All Ages</option>
-            <option value="0-18">0–18</option>
-            <option value="19-40">19–40</option>
-            <option value="41-60">41–60</option>
-            <option value="60+">60+</option>
-          </select>
-        </Card>
+            Reset
+          </button>
+        </div>
       )}
 
-      {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
-            <thead className="bg-emerald-600 text-white">
-              <tr>
-                <th className="p-4">Name</th>
-                <th className="p-4">Email</th>
-                <th className="p-4">Age</th>
-                <th className="p-4">Phone</th>
-                <th className="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((p) => (
-                <tr key={p.id} className="border-t hover:bg-emerald-50">
-                  <td className="p-4">{p.firstName} {p.lastName || ""}</td>
-                  <td className="p-4">{p.user.email}</td>
-                  <td className="p-4">{getAge(p.dateOfBirth) ?? "-"}</td>
-                  <td className="p-4">{p.phone}</td>
-                  <td className="p-4 flex justify-center gap-2">
-                    <Link href={`/admin/patients/${p.id}`} className="p-2 hover:bg-emerald-100 rounded">
-                      <Eye size={16} />
-                    </Link>
-                    <button onClick={() => openEdit(p)} className="p-2 hover:bg-blue-100 rounded">
-                      <Pencil size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(p.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      {/* TABLE */}
+      <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+        <table className="w-full text-sm border-collapse">
+          <thead className="bg-[#4ca626] text-white">
+            <tr>
+              <th className="px-4 py-3 text-left">Name</th>
+              <th className="px-4 py-3 text-left">Email</th>
+              <th className="px-4 py-3 text-left">Age</th>
+              <th className="px-4 py-3 text-left">Gender</th>
+              <th className="px-4 py-3 text-left">Phone</th>
+              <th className="px-4 py-3 text-left">Address</th>
+              <th className="px-4 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
 
-      {/* Pagination */}
-      <div className="flex gap-2">
-        <Button disabled={page === 1} onClick={() => setPage(page - 1)}>Prev</Button>
-        <span className="px-2">Page {page} / {totalPages || 1}</span>
-        <Button disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+          <tbody>
+            {filteredPatients.map((p) => (
+              <tr key={p.id} className="border-b hover:bg-green-50">
+                <td className="px-4 py-3 font-medium">{p.firstName} {p.lastName || ""}</td>
+                <td className="px-4 py-3">{p.user.email}</td>
+                <td className="px-4 py-3">{getAge(p.dateOfBirth)}</td>
+                <td className="px-4 py-3">{p.gender || "-"}</td>
+                <td className="px-4 py-3">{p.phone}</td>
+                <td className="px-4 py-3">{p.address || "-"}</td>
+                <td className="px-4 py-3 flex justify-center gap-2">
+                  <Link href={`/admin/patients/${p.id}`} className="p-2 text-green-700 hover:text-green-900">
+                    <Eye size={16} />
+                  </Link>
+                  <button onClick={() => openEdit(p)} className="p-2 text-blue-600 hover:text-blue-800">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:text-red-800">
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {filteredPatients.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-gray-500">
+                  No patients found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Modal */}
+      {/* MODAL */}
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl w-full max-w-lg p-6 space-y-4 shadow-lg">
 
-            {/* Header */}
-            <div className="border-b px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-800">
-                {isEdit ? "Edit Patient" : "Add New Patient"}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {isEdit ? "Update patient information below" : "Fill in the patient details"}
-              </p>
+            <div className="flex justify-between">
+              <h2 className="text-lg font-semibold">{isEdit ? "Edit Patient" : "Add Patient"}</h2>
+              <button onClick={() => setOpen(false)}>
+                <X />
+              </button>
             </div>
 
-            {/* Body */}
-            <div className="space-y-4 px-6 py-5">
-              {["firstName", "lastName", "email", "dateOfBirth", "phone", "address"].map((f) => (
-                <div key={f} className="space-y-1">
-                  <label className="text-sm font-medium capitalize text-gray-700">
-                    {f === "dateOfBirth" ? "Date of Birth" : f}
-                  </label>
-                  <input
-                    type={f === "dateOfBirth" ? "date" : "text"}
-                    className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
-                    placeholder={`Enter ${f}`}
-                    value={form[f]}
-                    disabled={isEdit && f === "email"}
-                    onChange={(e) => setForm({ ...form, [f]: e.target.value })}
-                  />
-                </div>
-              ))}
-
-              {/* Gender */}
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Gender</label>
-                <select
-                  className="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                >
-                  <option value="">Select gender</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                </select>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                placeholder="First Name"
+                value={form.firstName}
+                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                className="border p-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none"
+              />
+              <input
+                placeholder="Last Name"
+                value={form.lastName}
+                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                className="border p-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none"
+              />
+              <input
+                placeholder="Email"
+                disabled={isEdit}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="border p-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none disabled:bg-gray-100"
+              />
+              <input
+                type="date"
+                placeholder="Date of Birth"
+                value={form.dateOfBirth}
+                onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+                className="border p-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none"
+              />
+              <input
+                placeholder="Phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                className="border p-2 rounded focus:ring-2 focus:ring-[#4ca626] outline-none"
+              />
+              <input
+                placeholder="Address"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                className="border p-2 rounded col-span-2 focus:ring-2 focus:ring-[#4ca626] outline-none"
+              />
+              <select
+                value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                className="border p-2 rounded col-span-2 focus:ring-2 focus:ring-[#4ca626] outline-none"
+              >
+                <option value="">Select Gender</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+              </select>
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-3 border-t bg-gray-50 px-6 py-4">
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>{isEdit ? "Update Patient" : "Create Patient"}</Button>
-            </div>
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-[#4ca626] text-white py-2 rounded-lg hover:bg-green-700 transition"
+            >
+              {isEdit ? "Update Patient" : "Create Patient"}
+            </button>
           </div>
         </div>
       )}

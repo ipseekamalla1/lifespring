@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
+import Toast from "@/components/ui/Toast";
 
 type Admin = {
   id: string;
@@ -16,8 +16,9 @@ export default function AdminManagementTab() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  // 🔹 Load admins + current admin
+  /* ================= LOAD ADMINS ================= */
   const loadAdmins = async () => {
     try {
       const res = await fetch("/api/admin/manage-admins");
@@ -26,7 +27,7 @@ export default function AdminManagementTab() {
       setAdmins(Array.isArray(data.admins) ? data.admins : []);
       setCurrentAdminId(data.currentAdminId);
     } catch {
-      toast.error("Failed to load admins");
+      setToast({ message: "Failed to load admins", type: "error" });
     }
   };
 
@@ -34,10 +35,10 @@ export default function AdminManagementTab() {
     loadAdmins();
   }, []);
 
-  // 🔹 Create admin
+  /* ================= CREATE ADMIN ================= */
   const createAdmin = async () => {
     if (!email || !password) {
-      toast.error("Email and password are required");
+      setToast({ message: "Email and password are required", type: "error" });
       return;
     }
 
@@ -48,20 +49,20 @@ export default function AdminManagementTab() {
     });
 
     if (!res.ok) {
-      toast.error("Failed to create admin");
+      setToast({ message: "Failed to create admin", type: "error" });
       return;
     }
 
-    toast.success("Admin created successfully");
+    setToast({ message: "Admin created successfully", type: "success" });
     setEmail("");
     setPassword("");
     loadAdmins();
   };
 
-  // 🔹 Delete admin (with self protection)
+  /* ================= DELETE ADMIN ================= */
   const deleteAdmin = async (adminId: string) => {
     if (adminId === currentAdminId) {
-      toast.error("You cannot delete your own admin account");
+      setToast({ message: "You cannot delete your own admin account", type: "error" });
       return;
     }
 
@@ -76,41 +77,43 @@ export default function AdminManagementTab() {
     const data = await res.json();
 
     if (!res.ok) {
-      toast.error(data.message || "Failed to delete admin");
+      setToast({ message: data.message || "Failed to delete admin", type: "error" });
       return;
     }
 
-    toast.success("Admin deleted successfully");
+    setToast({ message: "Admin deleted successfully", type: "success" });
     loadAdmins();
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen">
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
       {/* ➕ Create Admin */}
-      <Card>
+      <Card className="rounded-2xl shadow-sm">
         <CardContent className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold">Create New Admin</h2>
+          <h2 className="text-lg font-semibold text-[#4ca626]">Create New Admin</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               placeholder="Admin email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="px-4 py-2 border rounded-lg"
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4ca626] outline-none"
             />
-
             <input
               type="password"
               placeholder="Temporary password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="px-4 py-2 border rounded-lg"
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#4ca626] outline-none"
             />
           </div>
 
           <button
             onClick={createAdmin}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg"
+            className="flex items-center gap-2 bg-[#4ca626] hover:bg-[#3f961f] text-white px-4 py-2 rounded-lg transition"
           >
             <Plus size={16} />
             Create Admin
@@ -119,54 +122,41 @@ export default function AdminManagementTab() {
       </Card>
 
       {/* 📋 Admin List */}
-      <Card>
+      <Card className="rounded-2xl shadow-sm">
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-emerald-600 text-white">
+          <table className="w-full text-sm border-collapse">
+            <thead className="bg-[#4ca626] text-white">
               <tr>
-                <th className="p-4 text-left">Email</th>
-                <th className="p-4">Created</th>
-                <th className="p-4 text-center">Actions</th>
+                <th className="px-4 py-3 text-left">Email</th>
+                <th className="px-4 py-3 text-left">Created</th>
+                <th className="px-4 py-3 text-center">Actions</th>
               </tr>
             </thead>
 
             <tbody>
               {admins.map((admin) => {
                 const isSelf = admin.id === currentAdminId;
-
                 return (
-                  <tr
-                    key={admin.id}
-                    className="border-t hover:bg-emerald-50"
-                  >
-                    <td className="p-4">
+                  <tr key={admin.id} className="border-t hover:bg-green-50">
+                    <td className="px-4 py-3 font-medium">
                       {admin.email}
                       {isSelf && (
-                        <span className="ml-2 text-xs text-emerald-600">
-                          (You)
-                        </span>
+                        <span className="ml-2 text-xs text-[#4ca626]">(You)</span>
                       )}
                     </td>
-
-                    <td className="p-4 text-xs text-gray-600">
+                    <td className="px-4 py-3 text-xs text-gray-600">
                       {new Date(admin.createdAt).toLocaleDateString()}
                     </td>
-
-                    <td className="p-4 text-center">
+                    <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => deleteAdmin(admin.id)}
                         disabled={isSelf}
-                        title={
+                        title={isSelf ? "You cannot delete your own account" : "Remove admin"}
+                        className={`p-2 rounded transition ${
                           isSelf
-                            ? "You cannot delete your own account"
-                            : "Remove admin"
-                        }
-                        className={`p-2 rounded 
-                          ${
-                            isSelf
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-red-600 hover:bg-red-100"
-                          }`}
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-red-600 hover:bg-red-100"
+                        }`}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -177,10 +167,7 @@ export default function AdminManagementTab() {
 
               {admins.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="p-6 text-center text-gray-500"
-                  >
+                  <td colSpan={3} className="p-6 text-center text-gray-500">
                     No admins found
                   </td>
                 </tr>
