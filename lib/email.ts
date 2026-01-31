@@ -161,3 +161,36 @@ export async function sendAppointmentStatusEmail({
     }),
   });
 }
+
+export async function sendResetPasswordEmail({
+  to,
+  resetUrl,
+}: {
+  to: string;
+  resetUrl: string;
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"LifeSpring" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Reset your password",
+    html: `
+      <p>You requested a password reset.</p>
+      <p>
+        <a href="${resetUrl}" target="_blank">
+          Click here to reset your password
+        </a>
+      </p>
+      <p>This link expires in 30 minutes.</p>
+    `,
+  });
+}

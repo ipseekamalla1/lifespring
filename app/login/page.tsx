@@ -128,6 +128,15 @@ if (data.role === "PATIENT") {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+              <div className="text-right">
+  <Link
+    href="/forgot-password"
+    className="text-sm text-[#4ca626] font-medium hover:underline"
+  >
+    Forgot password?
+  </Link>
+</div>
+
 
               {error && (
                 <p className="text-red-500 text-sm text-center">{error}</p>
