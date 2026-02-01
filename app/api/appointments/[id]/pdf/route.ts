@@ -3,46 +3,46 @@ import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import fs from "fs";
+import fs from "fs"; 
 import path from "path";
-
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
 
-  if (!id) {
-    return new NextResponse("Invalid appointment ID", { status: 400 });
-  }
+  if (!id) return new NextResponse("Invalid appointment ID", { status: 400 });
 
+  // ✅ Get token from cookies
   const token = (await cookies()).get("session")?.value;
-  if (!token) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  if (!token) return new NextResponse("Unauthorized", { status: 401 });
 
+  // ✅ Decode token
   const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
 
+  // ✅ Fetch appointment with patient & doctor
   const appointment = await prisma.appointment.findUnique({
     where: { id },
     include: {
-      patient: {
-        include: { user: true },
-      },
-      doctor: {
-        include: {
-          user: true,
-          department: true,
-        },
-      },
+      patient: { include: { user: true } },
+      doctor: { include: { user: true, department: true } },
     },
   });
 
-  if (!appointment || appointment.patient.userId !== decoded.id) {
+  if (!appointment) return new NextResponse("Not found", { status: 404 });
+
+  // ✅ Role-based access control
+  const role = decoded.role; // "ADMIN" | "DOCTOR" | "PATIENT"
+  const userId = decoded.id;
+
+  if (
+    (role === "PATIENT" && appointment.patient.userId !== userId) ||
+    (role === "DOCTOR" && appointment.doctor.userId !== userId)
+  ) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  /* ---------- CREATE PDF ---------- */
+  // ---------- CREATE PDF ----------
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595, 842]);
   const { width, height } = page.getSize();
@@ -56,7 +56,7 @@ export async function GET(
 
   const themeGreen = rgb(76 / 255, 166 / 255, 38 / 255);
 
-  /* ---------- HEADER ---------- */
+  // ---------- HEADER ----------
   page.drawRectangle({
     x: 0,
     y: height - 95,
@@ -65,10 +65,10 @@ export async function GET(
     color: themeGreen,
   });
 
-  const logoPath = path.join(process.cwd(), "public/images/logo2.png");
+  // ✅ Use fetch to load logo (serverless safe)
+ const logoPath = path.join(process.cwd(), "public/images/logo2.png");
   const logoBytes = fs.readFileSync(logoPath);
   const logoImage = await pdf.embedPng(logoBytes);
-
   page.drawImage(logoImage, {
     x: margin,
     y: height - 80,
@@ -94,15 +94,9 @@ export async function GET(
 
   y = height - 120;
 
-  /* ---------- CARD HELPER ---------- */
+  // ---------- CARD HELPER ----------
   const drawCard = (title: string, content: () => void) => {
-    page.drawText(title, {
-      x: margin,
-      y,
-      font: bold,
-      size: 15,
-    });
-
+    page.drawText(title, { x: margin, y, font: bold, size: 15 });
     y -= 10;
 
     page.drawLine({
@@ -114,10 +108,10 @@ export async function GET(
 
     y -= 18;
     content();
-    y -= 40; // 🔹 vertical gap between sections
+    y -= 40;
   };
 
-  /* ---------- STATUS COLORS ---------- */
+  // ---------- STATUS COLOR ----------
   const statusColor =
     appointment.status === "CONFIRMED"
       ? rgb(0.1, 0.4, 0.8)
@@ -125,70 +119,37 @@ export async function GET(
       ? rgb(0.8, 0.2, 0.2)
       : rgb(0.9, 0.7, 0.1);
 
-  /* ---------- PATIENT INFO ---------- */
+  // ---------- PATIENT INFO ----------
   drawCard("Patient Information", () => {
     page.drawText(
       `Name: ${appointment.patient.firstName ?? ""} ${appointment.patient.lastName ?? ""}`,
       { x: margin, y, font, size: 12 }
     );
-
-    page.drawText(
-      `${appointment.status}`,
-      {
-        x: width - margin - 160,
-        y,
-        font: bold,
-        size: 11,
-        color: statusColor,
-      }
-    );
-
-    y -= line;
-
-    page.drawText(
-      `Email: ${appointment.patient.user.email}`,
-      { x: margin, y, font, size: 12 }
-    );
-    y -= line;
-
-    page.drawText(
-      `Blood Group: ${appointment.patient.bloodGroup ?? "N/A"}`,
-      { x: margin, y, font, size: 12 }
-    );
-    y -= line;
-
-    page.drawText(
-      `Phone: ${appointment.patient.phone ?? "N/A"}`,
-      { x: margin, y, font, size: 12 }
-    );
-  });
-
-  /* ---------- APPOINTMENT DETAILS ---------- */
-  drawCard("Appointment Details", () => {
-    page.drawText(
-      `Date: ${appointment.date.toDateString()}`,
-      { x: margin, y, font, size: 12 }
-    );
-
-    page.drawText(
-      `Time: ${appointment.date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`,
-      { x: margin + 260, y, font, size: 12 }
-    );
-
-    y -= line + 6;
-
-    page.drawText("Reason:", {
-      x: margin,
+    page.drawText(`${appointment.status}`, {
+      x: width - margin - 160,
       y,
       font: bold,
-      size: 12,
+      size: 11,
+      color: statusColor,
     });
-
     y -= line;
+    page.drawText(`Email: ${appointment.patient.user.email}`, { x: margin, y, font, size: 12 });
+    y -= line;
+    page.drawText(`Blood Group: ${appointment.patient.bloodGroup ?? "N/A"}`, { x: margin, y, font, size: 12 });
+    y -= line;
+    page.drawText(`Phone: ${appointment.patient.phone ?? "N/A"}`, { x: margin, y, font, size: 12 });
+  });
 
+  // ---------- APPOINTMENT DETAILS ----------
+  drawCard("Appointment Details", () => {
+    page.drawText(`Date: ${appointment.date.toDateString()}`, { x: margin, y, font, size: 12 });
+    page.drawText(
+      `Time: ${appointment.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+      { x: margin + 260, y, font, size: 12 }
+    );
+    y -= line + 6;
+    page.drawText("Reason:", { x: margin, y, font: bold, size: 12 });
+    y -= line;
     page.drawText(appointment.reason || "N/A", {
       x: margin,
       y,
@@ -199,66 +160,34 @@ export async function GET(
     });
   });
 
-  /* ---------- DOCTOR INFO ---------- */
+  // ---------- DOCTOR INFO ----------
   drawCard("Doctor Information", () => {
-    page.drawText(
-      `Name: ${appointment.doctor.name ?? "N/A"}`,
-      { x: margin, y, font, size: 12 }
-    );
+    page.drawText(`Name: ${appointment.doctor.name ?? "N/A"}`, { x: margin, y, font, size: 12 });
     y -= line;
-
-    page.drawText(
-      `Email: ${appointment.doctor.user.email}`,
-      { x: margin, y, font, size: 12 }
-    );
+    page.drawText(`Email: ${appointment.doctor.user.email}`, { x: margin, y, font, size: 12 });
     y -= line;
-
-    page.drawText(
-      `Specialization: ${appointment.doctor.specialization ?? "N/A"}`,
-      { x: margin, y, font, size: 12 }
-    );
+    page.drawText(`Specialization: ${appointment.doctor.specialization ?? "N/A"}`, { x: margin, y, font, size: 12 });
     y -= line;
-
-    page.drawText(
-      `Department: ${appointment.doctor.department?.name ?? "N/A"}`,
-      { x: margin, y, font, size: 12 }
-    );
+    page.drawText(`Department: ${appointment.doctor.department?.name ?? "N/A"}`, { x: margin, y, font, size: 12 });
   });
 
-  /* ---------- FOOTER ---------- */
-  page.drawLine({
-    start: { x: margin, y: 70 },
-    end: { x: width - margin, y: 70 },
-    thickness: 1,
-    color: rgb(0.85, 0.85, 0.85),
-  });
+  // ---------- FOOTER ----------
+  page.drawLine({ start: { x: margin, y: 70 }, end: { x: width - margin, y: 70 }, thickness: 1, color: rgb(0.85, 0.85, 0.85) });
+  page.drawText("Please arrive 10 minutes early. This document is system generated.", { x: margin, y: 50, size: 9, font, color: rgb(0.5, 0.5, 0.5) });
 
-  page.drawText(
-    "Please arrive 10 minutes early. This document is system generated.",
-    {
-      x: margin,
-      y: 50,
-      size: 9,
-      font,
-      color: rgb(0.5, 0.5, 0.5),
-    }
-  );
-
+  // ---------- RETURN PDF ----------
   const bytes = await pdf.save();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
 
-const stream = new ReadableStream({
-  start(controller) {
-    controller.enqueue(bytes);
-    controller.close();
-  },
-});
-
-return new NextResponse(stream, {
-  headers: {
-    "Content-Type": "application/pdf",
-    "Content-Disposition": "inline; filename=appointment.pdf",
-  },
-});
-
-
+  return new NextResponse(stream, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": "inline; filename=appointment.pdf",
+    },
+  });
 }

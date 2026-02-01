@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
-export async function GET() {
+/* ================= CREATE APPOINTMENT ================= */
+export async function POST(req: Request) {
   try {
     /* ---------- AUTH ---------- */
     const cookieStore = await cookies();
@@ -19,38 +20,32 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    /* ---------- FETCH APPOINTMENTS ---------- */
-    const appointments = await prisma.appointment.findMany({
-      orderBy: { date: "desc" },
-      include: {
-        patient: {
-          select: {
-            firstName: true,
-            lastName: true,
-            phone: true,
-            user: {
-              select: {
-                email: true,
-              },
-            },
-          },
-        },
-        doctor: {
-          select: {
-            name: true,
-            department: {
-              select: { name: true },
-            },
-          },
-        },
+    /* ---------- BODY ---------- */
+    const { doctorId, patientId, date, reason } = await req.json();
+
+    if (!doctorId || !patientId || !date || !reason) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    /* ---------- CREATE ---------- */
+    const appointment = await prisma.appointment.create({
+      data: {
+        doctorId,
+        patientId,
+        date: new Date(date),
+        reason,
+        status: "PENDING",
       },
     });
 
-    return NextResponse.json(appointments);
+    return NextResponse.json(appointment, { status: 201 });
   } catch (error) {
-    console.error("GET appointments error:", error);
+    console.error("POST appointment error:", error);
     return NextResponse.json(
-      { error: "Failed to fetch appointments" },
+      { error: "Failed to create appointment" },
       { status: 500 }
     );
   }
