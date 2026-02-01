@@ -53,6 +53,24 @@ export default function DoctorDetailsPage() {
       .then(setAllPatients);
   }, [open]);
 
+  const formatBloodGroup = (bg: string | null | undefined) => {
+  if (!bg) return "-";
+
+  const map: Record<string, string> = {
+    A_POS: "A+",
+    A_NEG: "A-",
+    B_POS: "B+",
+    B_NEG: "B-",
+    AB_POS: "AB+",
+    AB_NEG: "AB-",
+    O_POS: "O+",
+    O_NEG: "O-",
+  };
+
+  return map[bg] || bg; // fallback to original if not found
+};
+
+
   /* ---------------- UNIQUE PATIENTS ---------------- */
   const uniquePatients = useMemo(() => {
     if (!doctor?.appointments) return [];
@@ -213,26 +231,38 @@ export default function DoctorDetailsPage() {
               <Plus size={16} /> New Appointment
             </button>
           </div>
+<table className="w-full text-sm table-auto border-collapse">
+  <thead className="bg-[#4ca626] text-white">
+    <tr>
+      <th className="p-3 text-left">Patient</th>
+      <th className="p-3 text-center">Date</th>
+      <th className="p-3 text-center">Time</th>
+      <th className="p-3 text-left">Reason</th>
+      <th className="p-3 text-center">Status</th>
+      <th className="p-3 text-center">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {doctor.appointments.map((a: any) => {
+      const dateObj = new Date(a.date);
+      const dateOnly = dateObj.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      const timeOnly = dateObj.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-          <table className="w-full text-sm">
-            <thead className="bg-[#4ca626] text-white">
-              <tr>
-                <th className="p-3 text-left">Patient</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Reason</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {doctor.appointments.map((a: any) => (
-                <tr key={a.id} className="border-t hover:bg-green-50">
-                  <td className="p-3">{a.patient?.firstName} {a.patient?.lastName ?? ""}</td>
-                  <td className="p-3">{new Date(a.date).toLocaleString()}</td>
-                  <td className="p-3">{a.reason}</td>
-                  <td className="p-3">
-                    {/* Single dropdown with colored background */}
-                   <select
+      return (
+        <tr key={a.id} className="border-t hover:bg-green-50">
+          <td className="p-3 text-left">{a.patient?.firstName} {a.patient?.lastName ?? ""}</td>
+          <td className="p-3 text-center">{dateOnly}</td>
+          <td className="p-3 text-center">{timeOnly}</td>
+          <td className="p-3 text-left">{a.reason}</td>
+          <td className="p-3 text-center">
+            <select
   value={a.status}
   onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
   className={`px-2 py-1 rounded text-white ${
@@ -243,73 +273,80 @@ export default function DoctorDetailsPage() {
       : "bg-red-300"     // pastel gray for cancelled
   }`}
 >
-                      <option value="PENDING">Pending</option>
-                      <option value="CONFIRMED">Confirmed</option>
-                      <option value="CANCELLED">Cancelled</option>
-                    </select>
-                  </td>
-                  <td className="p-3 text-center">
-                    {/* View PDF icon with tooltip */}
-                    <div className="relative group inline-block">
-                      <button
-                        onClick={() => window.open(`/api/appointments/${a.id}/pdf`, "_blank")}
-                        className="text-[#4ca626] hover:text-green-800"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        View PDF
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+              <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </td>
+          <td className="p-3 text-center">
+            <div className="relative group inline-block">
+              <button
+                onClick={() => window.open(`/api/appointments/${a.id}/pdf`, "_blank")}
+                className="text-[#4ca626] hover:text-green-800"
+              >
+                <Eye size={18} />
+              </button>
+              <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                View PDF
+              </span>
+            </div>
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+
+
         </div>
       )}
 
-      {/* PATIENTS */}
-      {activeTab === "patients" && (
-        <div className="border rounded-xl shadow-sm">
-          <div className="p-4 border-b">
-            <input
-              placeholder="Search patient"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border px-4 py-2 rounded-lg w-72 focus:ring-2 focus:ring-[#4ca626]"
-            />
-          </div>
+     {/* PATIENTS */}
+{activeTab === "patients" && (
+  <div className="border rounded-xl shadow-sm">
+    {/* Header with title and search input */}
+    <div className="flex justify-between items-center p-4 border-b">
+      <h2 className="font-semibold text-[#4ca626] text-lg">Patient Appointments</h2>
+      <input
+        placeholder="Search patient"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="border px-4 py-2 rounded-lg w-72 focus:ring-2 focus:ring-[#4ca626]"
+      />
+    </div>
 
-          <table className="w-full text-sm">
-            <thead className="bg-[#4ca626] text-white">
-              <tr>
-                <th className="p-3 text-left">Patient</th>
-                <th className="p-3">Phone</th>
-                <th className="p-3 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPatients.map((p: any) => (
-                <tr key={p.id} className="border-t hover:bg-green-50">
-                  <td className="p-3">
-                    {p.firstName} {p.lastName ?? ""}
-                  </td>
-                  <td className="p-3">{p.phone}</td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => router.push(`/admin/patients/${p.id}`)}
-                      className="text-[#4ca626] hover:text-green-800"
-                    >
-                      <Eye size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <table className="w-full text-sm table-auto border-collapse">
+      <thead className="bg-[#4ca626] text-white">
+        <tr>
+          <th className="p-3 text-left">Patient</th>
+          <th className="p-3 text-left">Phone</th>
+          <th className="p-3 text-left">Address</th>
+          <th className="p-3 text-left">Blood Group</th>
+          <th className="p-3 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {filteredPatients.map((p: any) => (
+          <tr key={p.id} className="border-t hover:bg-green-50">
+            <td className="p-3 text-left">{p.firstName} {p.lastName ?? ""}</td>
+            <td className="p-3 text-left">{p.phone}</td>
+            <td className="p-3 text-left">{p.address}</td>
+            <td className="p-3 text-left">{formatBloodGroup(p.bloodGroup)}</td>
+            <td className="p-3 text-center">
+              <button
+                onClick={() => router.push(`/admin/patients/${p.id}`)}
+                className="text-[#4ca626] hover:text-green-800"
+              >
+                <Eye size={18} />
+              </button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
 
       {/* MODAL */}
       {open && (
