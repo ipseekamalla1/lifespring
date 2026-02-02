@@ -151,7 +151,7 @@ export default function AdminDashboard() {
               >
                 <div>
                   <p className="font-medium text-green-900">
-                    {appt.patient?.name ?? "Unknown Patient"}
+                    {appt.patient?.firstName ?? "Unknown Patient"}
                   </p>
                   <p className="text-xs text-green-700/70">
                     {new Date(appt.date).toLocaleString()}
