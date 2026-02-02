@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 /* ================= TYPES ================= */
-
 type AppointmentStatus = "PENDING" | "CONFIRMED" | "CANCELLED";
 
 type Appointment = {
@@ -14,24 +13,23 @@ type Appointment = {
   date: string;
   reason: string;
   status: AppointmentStatus;
-  patient: {
+  patient?: {
     id: string;
     firstName: string | null;
     lastName: string | null;
     phone: string | null;
-  };
-  doctor: {
+  } | null;
+  doctor?: {
     id: string;
     name: string | null;
     department?: { name: string } | null;
-  };
+  } | null;
 };
 
 type Doctor = { id: string; name: string };
 type Patient = { id: string; firstName: string; lastName: string };
 
 /* ================= CONSTANTS ================= */
-
 const WORK_START = 9;
 const WORK_END = 17;
 const SLOT_MINUTES = 30;
@@ -44,7 +42,6 @@ const statusStyles: Record<AppointmentStatus, string> = {
 };
 
 /* ================= COMPONENT ================= */
-
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -82,7 +79,6 @@ export default function AdminAppointments() {
   };
 
   /* ================= LOAD DATA ================= */
-
   async function loadAll() {
     setLoading(true);
     const [a, p, d] = await Promise.all([
@@ -101,7 +97,6 @@ export default function AdminAppointments() {
   }, []);
 
   /* ================= BOOKED SLOTS ================= */
-
   useEffect(() => {
     if (!form.doctorId || !form.date) return;
 
@@ -133,7 +128,6 @@ export default function AdminAppointments() {
   }, [bookedSlots]);
 
   /* ================= CRUD ================= */
-
   async function handleSubmit() {
     if (!form.patientId || !form.doctorId || !form.date || !form.time) {
       showToast("Fill all fields", "error");
@@ -189,8 +183,6 @@ export default function AdminAppointments() {
     }
 
     const updated = await res.json();
-
-    // Update local state without refreshing page
     setAppointments((prev) =>
       prev.map((a) => (a.id === updated.id ? { ...a, status: updated.status } : a))
     );
@@ -214,7 +206,6 @@ export default function AdminAppointments() {
   }
 
   /* ================= FILTER ================= */
-
   const filtered = useMemo(() => {
     let data = [...appointments];
 
@@ -222,11 +213,11 @@ export default function AdminAppointments() {
       const q = search.toLowerCase();
       data = data.filter(
         (a) =>
-          `${a.patient.firstName} ${a.patient.lastName}`
+          `${a.patient?.firstName ?? ""} ${a.patient?.lastName ?? ""}`
             .toLowerCase()
             .includes(q) ||
-          a.patient.phone?.includes(q) ||
-          a.doctor.name?.toLowerCase().includes(q)
+          a.patient?.phone?.includes(q) ||
+          a.doctor?.name?.toLowerCase().includes(q)
       );
     }
 
@@ -242,7 +233,6 @@ export default function AdminAppointments() {
   if (loading) return <div className="p-6">Loading…</div>;
 
   /* ================= UI ================= */
-
   return (
     <div className="p-6 space-y-6 bg-white min-h-screen relative">
       {/* TOAST */}
@@ -334,14 +324,14 @@ export default function AdminAppointments() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="font-medium">
-                    {a.patient.firstName} {a.patient.lastName}
+                    {a.patient?.firstName ?? "—"} {a.patient?.lastName ?? ""}
                   </div>
-                  <div className="text-xs text-gray-500">{a.patient.phone}</div>
+                  <div className="text-xs text-gray-500">{a.patient?.phone ?? "—"}</div>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-medium">{a.doctor.name}</div>
+                  <div className="font-medium">{a.doctor?.name ?? "—"}</div>
                   <div className="text-xs text-gray-500">
-                    {a.doctor.department?.name || "—"}
+                    {a.doctor?.department?.name ?? "—"}
                   </div>
                 </td>
                 <td className="px-4 py-3">{a.reason}</td>
@@ -397,9 +387,7 @@ export default function AdminAppointments() {
 
             <select
               value={form.patientId}
-              onChange={(e) =>
-                setForm({ ...form, patientId: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, patientId: e.target.value })}
               className="border p-2 rounded w-full"
             >
               <option value="">Select patient</option>
