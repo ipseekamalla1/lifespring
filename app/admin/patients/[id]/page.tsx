@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Phone, Mail, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 type Appointment = {
   id: string;
@@ -24,6 +25,18 @@ export default function PatientProfilePage() {
   const [patient, setPatient] = useState<any>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // ------------------ TOAST ------------------
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // ------------------ FETCH PATIENT ------------------
   useEffect(() => {
     fetch(`/api/admin/patients/${id}`)
       .then((res) => res.json())
@@ -57,8 +70,10 @@ export default function PatientProfilePage() {
           a.id === updated.id ? { ...a, status: updated.status } : a
         ),
       }));
+
+      showToast("Appointment status updated successfully", "success");
     } catch {
-      alert("Failed to update status");
+      showToast("Failed to update appointment status", "error");
     } finally {
       setUpdatingId(null);
     }
@@ -80,7 +95,20 @@ export default function PatientProfilePage() {
   };
 
   return (
-    <div className="p-6 space-y-8 bg-white min-h-screen">
+    <div className="p-6 space-y-8 bg-white min-h-screen relative">
+      {/* ---------------- TOAST ---------------- */}
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`fixed top-6 right-6 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
+            toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+          }`}
+        >
+          {toast.message}
+        </motion.div>
+      )}
+
       {/* ================= PATIENT PROFILE CARD ================= */}
       <Card className="rounded-2xl shadow-sm border border-gray-200">
         <CardContent className="p-6 grid md:grid-cols-3 gap-6">
@@ -163,10 +191,10 @@ export default function PatientProfilePage() {
                           className={`px-3 py-1 rounded-full text-xs font-semibold border
                             ${
                               a.status === "CONFIRMED"
-                                ? "bg-[#4ca626]/30 text-[#4ca626]"
+                                ? "bg-emerald-100 text-emerald-800"
                                 : a.status === "CANCELLED"
-                                ? "bg-gray-200 text-gray-700"
-                                : "bg-yellow-200 text-yellow-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
                             }`}
                         >
                           <option value="PENDING">Pending</option>

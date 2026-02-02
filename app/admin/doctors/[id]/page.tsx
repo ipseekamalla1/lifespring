@@ -37,6 +37,12 @@ export default function DoctorDetailsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [toast, setToast] = useState<{
+  message: string;
+  type: "success" | "error";
+} | null>(null);
+
+
   /* ---------------- LOAD DOCTOR ---------------- */
   useEffect(() => {
     if (!id) return;
@@ -146,16 +152,35 @@ export default function DoctorDetailsPage() {
     fetch(`/api/admin/doctors/${id}`).then((res) => res.json()).then(setDoctor);
   };
 
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+  setToast({ message, type });
+  setTimeout(() => setToast(null), 3000);
+};
+
+
   /* ---------------- UPDATE STATUS ---------------- */
-  const updateAppointmentStatus = async (appointmentId: string, status: string) => {
-    await fetch(`/api/admin/appointments/${appointmentId}`, {
+  const updateAppointmentStatus = async (
+  appointmentId: string,
+  status: string
+) => {
+  try {
+    const res = await fetch(`/api/admin/appointments/${appointmentId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
 
-    fetch(`/api/admin/doctors/${id}`).then((res) => res.json()).then(setDoctor);
-  };
+    if (!res.ok) throw new Error("Failed");
+
+    showToast("Appointment status updated successfully");
+
+    fetch(`/api/admin/doctors/${id}`)
+      .then((res) => res.json())
+      .then(setDoctor);
+  } catch (err) {
+    showToast("Failed to update appointment status", "error");
+  }
+};
 
   /* ---------------- STATUS COLORS ---------------- */
   const getStatusClass = (status: string) => {
@@ -174,6 +199,19 @@ export default function DoctorDetailsPage() {
 
   return (
     <div className="p-6 space-y-6 bg-white min-h-screen">
+
+      {toast && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`fixed top-6 right-6 z-50 px-4 py-2 rounded-lg shadow-lg text-white ${
+      toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
+    }`}
+  >
+    {toast.message}
+  </motion.div>
+)}
+
       {/* PROFILE */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -265,12 +303,12 @@ export default function DoctorDetailsPage() {
             <select
   value={a.status}
   onChange={(e) => updateAppointmentStatus(a.id, e.target.value)}
-  className={`px-2 py-1 rounded text-white ${
+  className={`px-3 py-1 rounded-full text-xs font-semibold ${
     a.status === "PENDING"
-      ? "bg-yellow-500"   // pastel yellow
+      ? "bg-yellow-100 text-yellow-800"   // pastel yellow
       : a.status === "CONFIRMED"
-      ? "bg-[#4ca626]"    // pastel green
-      : "bg-red-300"     // pastel gray for cancelled
+      ? "bg-emerald-100 text-emerald-800"    // pastel green
+      : "bg-red-100 text-red-800"     // pastel gray for cancelled
   }`}
 >
               <option value="PENDING">Pending</option>
@@ -331,7 +369,7 @@ export default function DoctorDetailsPage() {
             <td className="p-3 text-left">{p.firstName} {p.lastName ?? ""}</td>
             <td className="p-3 text-left">{p.phone}</td>
             <td className="p-3 text-left">{p.address}</td>
-            <td className="p-3 text-left">{formatBloodGroup(p.bloodGroup)}</td>
+    <td className="p-3 text-left">{formatBloodGroup(p.bloodGroup)}</td>
             <td className="p-3 text-center">
               <button
                 onClick={() => router.push(`/admin/patients/${p.id}`)}
