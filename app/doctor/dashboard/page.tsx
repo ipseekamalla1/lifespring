@@ -24,7 +24,7 @@ type Appointment = {
   id: string;
   date: string;
   status: string;
-  patient: { name: string | null };
+  patient: { firstName: string | null };
 };
 
 type Note = {
@@ -75,112 +75,167 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* DOCTOR PROFILE – FULL WIDTH */}
-      {doctor && <DoctorProfileHero doctor={doctor} />}
+  <div className="space-y-10 p-6 min-h-screen bg-white max-w-7xl mx-auto">
 
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Total Appointments"
-          value={stats?.totalAppointments}
-          icon={<CalendarCheck className="text-emerald-600" />}
-        />
-        <StatCard
-          title="Today’s Appointments"
-          value={stats?.todayAppointments}
-          icon={<Clock className="text-emerald-600" />}
-        />
-        <StatCard
-          title="Pending Requests"
-          value={stats?.pendingAppointments}
-          icon={<UserRound className="text-emerald-600" />}
-        />
-      </div>
+    {/* HEADER */}
+    <div>
+      <h1 className="text-4xl font-bold text-[#4ca626]">
+        Doctor Dashboard
+      </h1>
+      <p className="text-green-700/80 mt-1">
+        Welcome back, Dr. {doctor?.name}
+      </p>
+    </div>
 
-      {/* RECENT SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* RECENT APPOINTMENTS */}
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Recent Appointments</CardTitle>
+    {/* DOCTOR PROFILE */}
+    {doctor && (
+      <Card className="rounded-2xl border border-green-200 bg-white shadow-md">
+        <CardContent className="p-8 flex flex-col md:flex-row md:justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="h-24 w-24 rounded-full bg-[#4ca626] flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+              {doctor.name.charAt(0)}
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-bold text-green-900">
+                Dr. {doctor.name}
+              </h2>
+              <p className="text-green-700 font-medium">
+                {doctor.specialization}
+              </p>
+              <p className="text-sm text-green-700/70">
+                Department: {doctor.department}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <p><b>Email:</b> {doctor.email}</p>
+            <p><b>Phone:</b> {doctor.phone ?? "—"}</p>
+            <p><b>Experience:</b> {doctor.experience ? `${doctor.experience} years` : "—"}</p>
+            <p>
+              <b>Status:</b>{" "}
+              <span className="text-green-800 font-semibold">Active</span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+
+    {/* STATS */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      <DashboardStat
+        title="Total Appointments"
+        value={stats?.totalAppointments}
+        icon={CalendarCheck}
+      />
+      <DashboardStat
+        title="Today’s Appointments"
+        value={stats?.todayAppointments}
+        icon={Clock}
+      />
+      <DashboardStat
+        title="Pending Requests"
+        value={stats?.pendingAppointments}
+        icon={UserRound}
+      />
+    </div>
+
+    {/* RECENT SECTION */}
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+      {/* RECENT APPOINTMENTS */}
+      <Card className="rounded-2xl border border-green-200 bg-white shadow-md">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-green-800">
+              Recent Appointments
+            </h2>
             <Button
               size="sm"
               variant="outline"
-              className="border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+              className="border-[#4ca626] text-[#4ca626] hover:bg-green-50"
               onClick={() => router.push("/doctor/appointments")}
             >
               View all
             </Button>
-          </CardHeader>
+          </div>
 
-          <CardContent className="space-y-4">
+          <div className="space-y-4">
             {appointments.length === 0 && (
-              <p className="text-sm text-gray-500">No recent appointments</p>
+              <p className="text-sm text-green-700/70">
+                No recent appointments
+              </p>
             )}
 
             {appointments.map(a => (
               <div
                 key={a.id}
-                className="flex items-center justify-between border-b pb-2"
+                className="flex justify-between items-center rounded-xl border border-green-100 p-4 hover:bg-green-50 transition"
               >
                 <div>
-                  <p className="font-medium">
-                    {a.patient?.name ?? "Unnamed Patient"}
+                  <p className="font-medium text-green-900">
+                    {a.patient?.firstName ?? "Unnamed Patient"}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-green-700/70">
                     {new Date(a.date).toLocaleString()}
                   </p>
                 </div>
 
                 <Button
                   size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() =>
-                    router.push(`/doctor/appointments/${a.id}`)
-                  }
+                  className="bg-[#4ca626] hover:bg-green-700"
+                  onClick={() => router.push(`/doctor/appointments/${a.id}`)}
                 >
                   View
                 </Button>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* RECENT NOTES */}
-        <Card>
-          <CardHeader className="flex items-center gap-2">
-            <FileText size={18} className="text-emerald-600" />
-            <CardTitle>Recent Notes</CardTitle>
-          </CardHeader>
+      {/* RECENT NOTES */}
+      <Card className="rounded-2xl border border-green-200 bg-white shadow-md">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold text-green-800 mb-4">
+            Recent Notes
+          </h2>
 
-          <CardContent className="space-y-4">
+          <div className="space-y-4">
             {notes.length === 0 && (
-              <p className="text-sm text-gray-500">No notes added yet</p>
+              <p className="text-sm text-green-700/70">
+                No notes added yet
+              </p>
             )}
 
             {notes.map(n => (
               <div
                 key={n.id}
-                className="border rounded-lg p-3 hover:bg-emerald-50 cursor-pointer"
+                className="rounded-xl border border-green-100 p-4 hover:bg-green-50 cursor-pointer transition"
                 onClick={() =>
                   router.push(`/doctor/appointments/${n.appointmentId}`)
                 }
               >
-                <p className="text-sm font-medium">{n.patientName}</p>
-                <p className="text-sm text-gray-700 line-clamp-2">
+                <p className="font-medium text-green-900">
+                  {n.patientName}
+                </p>
+                <p className="text-sm text-green-700 line-clamp-2">
                   {n.note}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-green-700/70 mt-1">
                   {new Date(n.createdAt).toLocaleString()}
                 </p>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
-  );
+  </div>
+);
+
 }
 
 /* ================= DOCTOR PROFILE ================= */
@@ -230,23 +285,30 @@ function DoctorProfileHero({ doctor }: { doctor: DoctorProfile }) {
 
 /* ================= STAT CARD ================= */
 
-function StatCard({
+function DashboardStat({
   title,
   value,
-  icon,
+  icon: Icon,
 }: {
   title: string;
   value?: number;
-  icon: React.ReactNode;
+  icon: any;
 }) {
   return (
-    <Card className="border-l-4 border-emerald-500">
-      <CardHeader className="flex items-center gap-2">
-        {icon}
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-4xl font-semibold">{value ?? 0}</p>
+    <Card className="relative overflow-hidden rounded-2xl border border-green-200 bg-white shadow-md hover:shadow-xl transition">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#4ca626] to-green-700 opacity-[0.08]" />
+
+      <CardContent className="p-6 flex justify-between items-center">
+        <div>
+          <p className="text-sm text-green-800/70">{title}</p>
+          <h2 className="text-4xl font-bold text-green-900">
+            {value ?? 0}
+          </h2>
+        </div>
+
+        <div className="p-4 rounded-xl bg-gradient-to-br from-[#4ca626] to-green-700 text-white shadow-lg">
+          <Icon size={28} />
+        </div>
       </CardContent>
     </Card>
   );
