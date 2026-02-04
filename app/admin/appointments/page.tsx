@@ -97,22 +97,25 @@ export default function AdminAppointments() {
   }, []);
 
   /* ================= BOOKED SLOTS ================= */
-  useEffect(() => {
-    if (!form.doctorId || !form.date) return;
+ useEffect(() => {
+  if (!form.doctorId || !form.date) return;
 
-    fetch(
-      `/api/appointments/byDoctor?doctorId=${form.doctorId}&date=${form.date}`
-    )
-      .then((r) => r.json())
-      .then((data) => {
-        setBookedSlots(
-          data.map((a: any) =>
+  fetch(
+    `/api/appointments/byDoctor?doctorId=${form.doctorId}&date=${form.date}`
+  )
+    .then((r) => r.json())
+    .then((data) => {
+      setBookedSlots(
+        data
+          .filter((a: any) => a.status !== "CANCELLED") // ✅ ignore canceled
+          .map((a: any) =>
             new Date(a.date).toTimeString().slice(0, 5)
           )
-        );
-        setForm((f) => ({ ...f, time: "" }));
-      });
-  }, [form.doctorId, form.date]);
+      );
+      setForm((f) => ({ ...f, time: "" }));
+    });
+}, [form.doctorId, form.date]);
+
 
   const slots = useMemo(() => {
     const s = [];
@@ -335,21 +338,23 @@ export default function AdminAppointments() {
                   </div>
                 </td>
                 <td className="px-4 py-3">{a.reason}</td>
-                <td className="px-4 py-3">
-                  <select
-                    value={a.status}
-                    onChange={(e) =>
-                      updateStatus(a.id, e.target.value as AppointmentStatus)
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      statusStyles[a.status]
-                    }`}
-                  >
-                    <option value="PENDING">PENDING</option>
-                    <option value="CONFIRMED">CONFIRMED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                  </select>
-                </td>
+               <td className="px-4 py-3">
+  <select
+    value={a.status}
+    onChange={(e) =>
+      updateStatus(a.id, e.target.value as AppointmentStatus)
+    }
+    disabled={a.status === "CANCELLED"} // ❌ disable if canceled
+    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+      statusStyles[a.status]
+    } ${a.status === "CANCELLED" ? "opacity-50 cursor-not-allowed" : ""}`} // visually disabled
+  >
+    <option value="PENDING">PENDING</option>
+    <option value="CONFIRMED">CONFIRMED</option>
+    <option value="CANCELLED">CANCELLED</option>
+  </select>
+</td>
+
                 <td className="px-4 py-3 flex justify-center gap-2">
                   <button
                     onClick={() =>

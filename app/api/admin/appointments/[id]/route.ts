@@ -65,6 +65,13 @@ export async function PATCH(
       );
     }
 
+    if (appointment.status === "CANCELLED") {
+  return NextResponse.json(
+    { error: "Cannot update a canceled appointment" },
+    { status: 400 }
+  );
+}
+
     /* ---------- UPDATE STATUS ---------- */
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
