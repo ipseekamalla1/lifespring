@@ -75,16 +75,13 @@ export default function AdminSidebar() {
     </nav>
   </div>
 
-  {/* LOGOUT pinned at bottom */}
-  <div className="p-6 mt-auto">
-    <Button
-      onClick={handleLogout}
-      className="w-full bg-red-600/90 hover:bg-red-600 text-white flex items-center gap-2 justify-center"
-    >
-      <LogOut size={18} />
-      Logout
-    </Button>
-  </div>
+  <Button
+          onClick={handleLogout}
+          className="w-full bg-[#4ca626] hover:bg-emerald-600 text-white flex items-center gap-2 justify-center"
+        >
+          <LogOut size={18} />
+          Logout
+        </Button>
 </aside>
 
   );

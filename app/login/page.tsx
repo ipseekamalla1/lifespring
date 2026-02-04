@@ -76,7 +76,7 @@ if (data.role === "PATIENT") {
         className="hidden lg:block lg:w-1/2 relative"
       >
         <Image
-          src="/images/doctor-potrait.jpg"
+          src="/images/login.webp"
           alt="Healthcare Login"
           fill
           priority
