@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Healthcare Management System
 
-## Getting Started
+A full-featured healthcare management system for **admins, doctors, and patients**. This system allows seamless appointment management, patient record tracking, and doctor schedule management, all in a **clean, responsive interface**.
 
-First, run the development server:
+---
+
+## Tech Stack
+
+- **Frontend:** React.js  
+- **Backend:** Node.js, Express.js  
+- **Database:** MongoDB / PostgreSQL (Prisma supported)  
+- **Authentication:** JWT-based role authentication (Admin, Doctor, Patient)  
+- **Styling:** CSS / UI Library (PrimeReact if used)  
+- **Deployment:** Vercel / Heroku (optional)  
+
+---
+
+## Project Overview
+
+This system provides **role-based dashboards**:
+
+- **Admin:** Manage doctors, patients, departments, and appointments.  
+- **Doctor:** View and update appointments and patient info.  
+- **Patient:** Book, view, reschedule, or cancel appointments.  
+- **Role-based Access:** Ensures each user sees only their relevant data.  
+
+The system is fully responsive and can be accessed on **desktop and mobile devices**. It provides a simple and efficient workflow for healthcare management.  
+
+---
+
+## Features
+
+- Role-based dashboards for Admin, Doctor, and Patient  
+- Appointment booking, rescheduling, and cancellation  
+- Patient medical history management  
+- Doctor profile and department management  
+- Responsive design for desktop and mobile devices  
+- Basic notifications for upcoming appointments  
+- Secure authentication and authorization  
+
+---
+
+## Setup Instructions
+
+Follow these steps to run the project locally:
+
+1. **Clone the repository**  
 
 ```bash
+git clone https://github.com/yourusername/healthcare-system.git
+cd healthcare-system
+
+2. Install dependencies
+
+npm install
+
+
+3. Set up environment variables
+
+Create a .env file in the root folder with the following:
+
+DATABASE_URL=your_database_connection_string
+JWT_SECRET=your_jwt_secret
+PORT=5000
+
+
+4. Run database migrations (if using Prisma)
+
+npx prisma migrate dev --name init
+
+
+5. Seed Admin Account
+
+npx prisma db seed
+
+
+6. Admin Login Credentials:
+
+Email: admin@example.com
+
+Password: Admin@123
+
+You can change these credentials in the seed file if desired.
+
+7. Run the application
+
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+8. Open in browser
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Visit http://localhost:3000
