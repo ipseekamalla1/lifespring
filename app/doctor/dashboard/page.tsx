@@ -79,7 +79,7 @@ export default function DoctorDashboard() {
 
     {/* HEADER */}
     <div>
-      <h1 className="text-4xl font-bold text-[#4ca626]">
+      <h1 className="text-4xl font-bold text-black">
         Doctor Dashboard
       </h1>
       <p className="text-green-700/80 mt-1">

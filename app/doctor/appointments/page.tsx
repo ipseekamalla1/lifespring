@@ -129,7 +129,7 @@ export default function DoctorAppointmentsPage() {
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <h1 className="text-3xl font-bold text-[#4ca626]">
+      <h1 className="text-3xl font-bold text-black">
         Appointments
       </h1>
       <p className="text-sm text-green-700/80">

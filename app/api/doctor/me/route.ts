@@ -30,6 +30,8 @@ export async function GET() {
     where: { userId: decoded.id },
     include: {
       user: { select: { email: true } },
+          department: { select: { name: true } }, // ← include department
+
     },
   });
 
@@ -40,7 +42,7 @@ export async function GET() {
   return NextResponse.json({
     id: doctor.id,
     name: doctor.name,
-    departmentId: doctor.departmentId || null,
+    department: doctor.department?.name || "", // ← use the department name
     specialization: doctor.specialization,
     phone: doctor.phone,
     experience: doctor.experience,
