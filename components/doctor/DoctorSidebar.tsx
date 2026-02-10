@@ -75,7 +75,7 @@ export default function DoctorSidebar() {
 
         {/* DOCTOR NAME */}
         <h2 className="text-white font-semibold text-lg mb-1 text-center">
-          {doctor ? `Dr. ${doctor.name}` : "Loading..."}
+          {doctor ? ` ${doctor.name}` : "Loading..."}
         </h2>
 
         <p className="text-xs text-slate-400 mb-6 flex items-center gap-1">

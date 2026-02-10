@@ -83,7 +83,7 @@ export default function DoctorDashboard() {
         Doctor Dashboard
       </h1>
       <p className="text-green-700/80 mt-1">
-        Welcome back, Dr. {doctor?.name}
+        Welcome back, {doctor?.name}
       </p>
     </div>
 
@@ -98,7 +98,7 @@ export default function DoctorDashboard() {
 
             <div>
               <h2 className="text-2xl font-bold text-green-900">
-                Dr. {doctor.name}
+                 {doctor.name}
               </h2>
               <p className="text-green-700 font-medium">
                 {doctor.specialization}

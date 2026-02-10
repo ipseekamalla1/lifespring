@@ -134,13 +134,13 @@ export default function CompleteProfilePage() {
 
                   <div>
                     <label className="text-sm font-medium flex items-center gap-2"><Phone size={16} /> Phone (10 digits)</label>
-                    <Input name="phone" maxLength={10} placeholder="1234567890" onChange={handleChange} className="h-12 mt-1" />
+                    <Input name="phone" maxLength={10} placeholder="1234567890" onChange={handleChange} className="h-12 mt-1" autoComplete="off" />
                     {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium flex items-center gap-2"><MapPin size={16} /> Address</label>
-                    <Input name="address" placeholder="Your address" onChange={handleChange} className="h-12 mt-1" />
+                    <label className="text-sm font-medium flex items-center gap-2"><MapPin size={16}  /> Address</label>
+                    <Input name="address" placeholder="Your address" onChange={handleChange} className="h-12 mt-1" autoComplete="off" />
                   </div>
                 </motion.div>
               )}
